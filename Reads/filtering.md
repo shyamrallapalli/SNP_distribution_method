@@ -13,7 +13,7 @@ lines(d2, col = "royalblue2", lty=2)
 lines(d3, col = "gray46", lwd =5)
 legend("topright",col=c('magenta', "royalblue2", "grey46"),lwd=1,lty=1:2, cex=1.2, pt.cex = 2,
        legend=c("Homozygous SNP density","Heterozygous SNP density", "Ratio Hom/Het"), bty="n")
- ```
+```
 
 
 ### BCF2 
