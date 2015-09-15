@@ -20,6 +20,9 @@ class SDM
   ##Input for sorting: inverted hash containing the normalised homozygous scores as key and the fragments' ids as value.
   ##Output from sorting: perm is the permutation array containing the candidate order of contigs and mut is the array of candidate contigs taken from the central part of perm
 	def self.sorting(dic_hm_inv, cross, average_contig)
+    #warn "#{dic_hm_inv}\n"
+    #warn "#{cross}\n"
+    #warn "#{average_contig}\n"
     def self.divide_array(dic_hm_inv, right, left, keys_hm, dest, cross)
       contigs_at_min = []
       minimum = keys_hm.min #define minimum score 
@@ -52,14 +55,20 @@ class SDM
       end
       return right, left, keys_hm
     end
-    left, right = [], []  
+    left, right = [], []
 		keys= dic_hm_inv.keys.to_a
+    warn "#{keys}\n"
 		Array(1..keys.length/2).each do |i| #repeat the sorting process until the original hash is sorted. 
       right, left, keys = SDM.divide_array(dic_hm_inv, right, left, keys, 0, cross)
       right, left, keys = SDM.divide_array(dic_hm_inv, right, left, keys, 1, cross)
+    warn "#{right}\n"
+    warn "#{left}\n"
     end 
+#    warn "#{right}\n"
+#    warn "#{left}\n"
     perm = right.flatten << left.compact.flatten.reverse #combine together both sides of the distribution
     perm.flatten!
+    warn "#{perm}\n"
     mut = []
     # pl = perm.length.to_i
     # r = pl/50

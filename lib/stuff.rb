@@ -84,15 +84,13 @@ class Stuff
 
 	def self.dic_id_pos(h_ids, snp_list)
 		dic_pos = {}
-	  	x = 0 
-	  	Array(0..snp_list.length - 1).each do |o|
+	  	(0..snp_list.length - 1).each do |x|
 	  		if dic_pos.has_key?(h_ids[x])
 	  			dic_pos[h_ids[x]] << snp_list[x]
-	  		else 
+	  		else
 	  			dic_pos[h_ids[x]] = []
 	  			dic_pos[h_ids[x]] << snp_list[x]
-	  		end 
-	    	x += 1 
+	  		end
 	 	end
 	  	return dic_pos
 	end 
