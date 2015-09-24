@@ -102,7 +102,7 @@ warn "I am here at step: 3\n"
 ids_ok, lengths_ok, id_len_ok = Stuff.fasta_id_n_lengths(frags)
 ids, lengths, id_len = Stuff.fasta_id_n_lengths(frags_shuffled)
 
-genome_length = Stuff.genome_length(fasta_file)
+genome_length = Stuff.genome_length(fasta_shuffle)
 
 average_contig = genome_length/ids.length
 
@@ -142,7 +142,7 @@ warn "I am here at step: 6\n"
 
 s_hm, s_snps_hm = Stuff.define_snps(ids_short, dic_hm)
 
-shuf_short_ids = Ratio_filtering.important_ids(ids_short, ids)
+shuf_short_ids = Ratio_filtering.important_ids(ids_short_shuf, ids)
 hm_sh = Ratio_filtering.important_pos(ids_short, dic_pos_hm)
 ht_sh = Ratio_filtering.important_pos(ids_short, dic_pos_ht)
 WriteIt::write_txt("#{logfold}/6_1_shuf_short_ids", shuf_short_ids)
@@ -172,7 +172,7 @@ end
 
 warn "I am here at step: 8\n"
 
-perm_hm, perm_ratio, mut, hyp_positions = SDM.calling_SDM(dic_shuf_hm_norm, dic_ratios_inv_shuf, dic_pos_hm, cross, average_contig)
+perm_hm, perm_ratio, mut, hyp_positions = SDM.calling_SDM(dic_shuf_hm_norm, dic_ratios_inv_shuf, frag_pos_hm, cross, average_contig)
 
 WriteIt::write_txt("#{logfold}/8_1_perm_hm", perm_hm)
 WriteIt::write_txt("#{logfold}/8_2_perm_ratio", perm_ratio)
