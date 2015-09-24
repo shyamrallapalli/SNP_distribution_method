@@ -4,19 +4,17 @@
 require_relative 'stuff'
 require 'csv'
 
-class Ratio_filtering 
+class Ratio_filtering
 
-	def self.important_ratios(snps_hm, snps_ht, ids, threshold, adjust) 
-		x = 0
+	def self.important_ratios(snps_hm, snps_ht, ids, threshold, adjust)
 		dic_ratios, ratios, ids_s = {}, [], []
-		dic_ratios_by_length = {}
-		snps_hm.length.times do
+		# dic_ratios_by_length = {}
+		(0..snps_hm.length-1).each do |x|
 			ratio = (snps_hm[x]+adjust.to_f)/(snps_ht[x]+adjust.to_f)
-			dic_ratios.store(ids[x], ratio.to_f) 
-			x += 1
+			dic_ratios.store(ids[x], ratio.to_f)
 		end
 		if threshold > 0
-			thres = 100/threshold
+			thres = 100.0/threshold.to_f
 			filter = (dic_ratios.values.max.to_f)/thres
 			dic_ratios.delete_if { |id, ratio|  ratio <= filter.to_f}
 			ratios << dic_ratios.values
@@ -26,18 +24,18 @@ class Ratio_filtering
 			contigs_discarded = ids.length - ids_s.length
 			puts "#{contigs_discarded} contigs out of #{ids.length} discarded"
 			while ids_s.length > 30*contigs_discarded do
-				threshold = threshold + 2 
+				threshold = threshold + 2
 				puts "threshold #{threshold}%"
-				dic_ratios, ratios, ids_s, dic_ratios_inv  = Ratio_filtering.important_ratios(snps_hm, snps_ht, ids, threshold, adjust)  
+				dic_ratios, ratios, ids_s, dic_ratios_inv  = Ratio_filtering.important_ratios(snps_hm, snps_ht, ids, threshold, adjust)
 				contigs_discarded = ids.length - ids_s.length
-			end 
+			end
 		else
-			contigs_discarded = ids.length - ids_s.length
+			# contigs_discarded = ids.length - ids_s.length
 			ratios << dic_ratios.values
 			ratios.flatten!
 			ids_s = dic_ratios.keys
 			dic_ratios_inv = Stuff.safe_invert(dic_ratios)
-		end 
+		end
 		return dic_ratios, ratios, ids_s, dic_ratios_inv
 	end
 
@@ -48,23 +46,23 @@ class Ratio_filtering
 		ids.each do |frag|
 			if ids_short.include?(frag)
 		    	shuf_short_ids << frag
-		  	end 
-		end 
+		  	end
+		end
 		shuf_short_ids.flatten!
 		return shuf_short_ids
-	end 
+	end
 	def self.important_pos(ids_short, pos)
 		sh = []
 		pos.each do |frag, positions|
 			if ids_short.include?(frag)
-		  	else 
+		  	else
 		    	pos.delete(frag)
-		  	end 
-		end 
+		  	end
+		end
 		sh = pos.values
 		sh.flatten!
 		return sh
-	end 
+	end
 
 	#Input1 location for the csv file
 	#Input2 hash with the id and positions for the hm SNPs
@@ -77,18 +75,18 @@ class Ratio_filtering
 		short = pos
 		short.each do |id, array|
 		  if ratios.has_key?(id)
-		  else 
+		  else
 		    short.delete(id)
 		  end
 		end
 		short.each do |id, array|
-			array.each do |elem| 
+			array.each do |elem|
 		    	CSV.open(csv, "ab") do |csv|
-		      		csv << [elem, ratios[id]] 
+		      		csv << [elem, ratios[id]]
 		      		pos_ratio.store(elem, ratios[id])
-		      	end 
-		    end 
+		      	end
+		    end
 		end
-		return pos_ratio 
-	end 
-end 
+		return pos_ratio
+	end
+end
