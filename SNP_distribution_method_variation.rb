@@ -16,10 +16,11 @@ require 'csv'
 require 'yaml'
 require 'fileutils'
 
-if ARGV.length == 6
+if ARGV.length == 5
 	dataset = ARGV[0]
 	#output_folder = ARGV[1]
-	threshold = ARGV[2].to_i #degree of filtering:  100, 50, 10, 5
+  #degree of filtering:  100, 50, 10, 5
+  threshold = ARGV[2].to_i
 	adjust = ARGV[3]
 	cross = ARGV[4]
 	puts "Looking for SNPs in #{dataset}"
@@ -34,20 +35,19 @@ if ARGV.length == 6
 	puts "A factor of #{adjust} will be used to calculate the ratio"
 else
 	puts "Please specify a (1) dataset, a (2) name for the output folder, a (3) threshold to discard the contigs which a ratio below it \
-  and a (4) factor to calculate the ratio (1, 0.1, 0.01...) (5) kind of cross: back or out (6) folder for progress logs"
+  and a (4) factor to calculate the ratio (1, 0.1, 0.01...) (5) kind of cross: back or out"
 end
 
 #### Inputs
+### shuffled genome and variants from the shuffled genome
 loc = "#{dataset}"
-vcf_file = "#{loc}/snps.vcf"
 fasta_shuffle = "#{loc}/frags_shuffled.fasta"
+vcf_file = "#{loc}/snps.vcf"
 
 output_folder  = "#{loc}/#{ARGV[1].chomp}"
 puts "Output will be in #{output_folder}"
-log_folder  = "#{loc}/#{ARGV[5].chomp}"
-#Make Output and directory
+#Make Output directory
 Dir.mkdir("#{output_folder}")
-Dir.mkdir("#{log_folder}")
 
 ### Ordered genome and variants in ordered genome
 fasta_file = "#{loc}/frags.fasta"

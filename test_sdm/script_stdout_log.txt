@@ -1,7 +1,7 @@
 Looking for SNPs in test_sdm
-Output will be in test_sdm/test_sdm_out
 Filtering step off. 
 A factor of 1 will be used to calculate the ratio
+Output will be in test_sdm/test_sdm_out
 Hypothetical positions carrying the causal mutation [1006, 18333, 29408, 31962, 48121, 68402, 87355, 94160, 99032, 107273, 112102, 118176]
 The length of the group of contigs that have a high Hom/het ratio is 23309365 bp
 ______________________
