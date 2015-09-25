@@ -49,18 +49,9 @@ puts "Output will be in #{output_folder}"
 #Make Output directory
 Dir.mkdir("#{output_folder}")
 
-### Ordered genome and variants in ordered genome
-fasta_file = "#{loc}/frags.fasta"
-hm_list = WriteIt.file_to_ints_array("#{loc}/hm_snps.txt") #create arrays for SNP densities
-ht_list = WriteIt.file_to_ints_array("#{loc}/ht_snps.txt")
-
 
 ####[1] Open VCF file
 snp_data, hm, ht, frag_pos = Stuff.snps_in_vcf(vcf_file)
-
-##Hashes with fragments ids and SNP positions for the correctly ordered genome
-dic_pos_hm =  Stuff.dic_id_pos(hm, hm_list)
-dic_pos_ht =  Stuff.dic_id_pos(ht, ht_list)
 
 ##Create hashes with the id of the fragment as the key and the NUMBER of SNPs as value
 dic_hm = Stuff.create_hash_number(hm)
@@ -76,35 +67,18 @@ ids, lengths, id_len = Stuff.fasta_id_n_lengths(frags_shuffled)
 genome_length = Stuff.genome_length(fasta_shuffle)
 average_contig = genome_length/ids.length
 
-##Open FASTA files containing the ordered contigs
-##from the array take ids and lengths
-frags = Stuff.fasta_array(fasta_file)
-ids_ok, lengths_ok, id_len_ok = Stuff.fasta_id_n_lengths(frags)
-
-
 ##Assign the number of SNPs to each fragment in the shuffled list (hash)
 ##If a fragment does not have SNPs, the value assigned will be 0.
 shuf_hm, shuf_snps_hm = Stuff.define_snps(ids, dic_hm)
 shuf_ht, shuf_snps_ht = Stuff.define_snps(ids, dic_ht)
 
-##Assign the number of SNPs to each fragment in the ordered list (hash)
-ok_hm, snps_hm = Stuff.define_snps(ids_ok, dic_hm)
-ok_ht, snps_ht = Stuff.define_snps(ids_ok, dic_ht)
-
 ##ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
 dic_ratios_shuf, ratios_shuf, ids_short_shuf, dic_ratios_inv_shuf = Ratio_filtering.important_ratios(shuf_snps_hm, shuf_snps_ht, ids, threshold, adjust)
-
-##ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-dic_ratios, ratios, ids_short, dic_ratios_inv  = Ratio_filtering.important_ratios(snps_hm, snps_ht, ids_ok, threshold, adjust)
 
 
 ##Redefine the arrays of SNPs after discarding the contigs that fell below the threshold provided.
 ##We refered to them as the "important contigs" and the SNPs on those are the "important positions"
 shuf_short_ids = Ratio_filtering.important_ids(ids_short_shuf, ids)
-
-s_hm, s_snps_hm = Stuff.define_snps(ids_short, dic_hm)
-hm_sh = Ratio_filtering.important_pos(ids_short, dic_pos_hm)
-ht_sh = Ratio_filtering.important_pos(ids_short, dic_pos_ht)
 
 ##Calculate how many contigs were discarded
 shuf_hm, shu_snps_hm = Stuff.define_snps(shuf_short_ids, dic_hm)
@@ -150,6 +124,37 @@ het_snps, hom_snps = ReformRatio.perm_pos(fasta_perm, snp_data)
 
 WriteIt::write_txt("#{output_folder}/perm_hm", hom_snps)
 WriteIt::write_txt("#{output_folder}/perm_ht", het_snps)
+
+
+########## Test comparison inputs and analysis
+
+### Ordered genome and variants in ordered genome
+fasta_file = "#{loc}/frags.fasta"
+hm_list = WriteIt.file_to_ints_array("#{loc}/hm_snps.txt") #create arrays for SNP densities
+ht_list = WriteIt.file_to_ints_array("#{loc}/ht_snps.txt")
+
+
+##Hashes with fragments ids and SNP positions for the correctly ordered genome
+dic_pos_hm =  Stuff.dic_id_pos(hm, hm_list)
+dic_pos_ht =  Stuff.dic_id_pos(ht, ht_list)
+
+##Open FASTA files containing the ordered contigs
+##from the array take ids and lengths
+frags = Stuff.fasta_array(fasta_file)
+ids_ok, lengths_ok, id_len_ok = Stuff.fasta_id_n_lengths(frags)
+
+##Assign the number of SNPs to each fragment in the ordered list (hash)
+ok_hm, snps_hm = Stuff.define_snps(ids_ok, dic_hm)
+ok_ht, snps_ht = Stuff.define_snps(ids_ok, dic_ht)
+
+##ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
+dic_ratios, ratios, ids_short, dic_ratios_inv  = Ratio_filtering.important_ratios(snps_hm, snps_ht, ids_ok, threshold, adjust)
+
+s_hm, s_snps_hm = Stuff.define_snps(ids_short, dic_hm)
+hm_sh = Ratio_filtering.important_pos(ids_short, dic_pos_hm)
+ht_sh = Ratio_filtering.important_pos(ids_short, dic_pos_ht)
+
+
 WriteIt::write_txt("#{output_folder}/hm_snps_short", hm_sh) # save the SNP distributions for the best permutation in the generation
 WriteIt::write_txt("#{output_folder}/ht_snps_short", ht_sh)
 
