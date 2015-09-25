@@ -59,12 +59,9 @@ dic_ht = Stuff.create_hash_number(ht)
 
 
 ####[2] Open FASTA files containing the unordered contigs
-##Create array with from shuffled fragments (fasta_shuffle)
-frags_shuffled = Stuff.fasta_array(fasta_shuffle)
-
-##From the previous array take ids and lengths and put them in 2 separate new arrays
-ids, lengths, id_len = Stuff.fasta_id_n_lengths(frags_shuffled)
-genome_length = Stuff.genome_length(fasta_shuffle)
+##Create a hash with shuffled fragments seq ids - values are lengths and sequences
+inseq, genome_length = Stuff.fasta_parse(fasta_shuffle)
+ids = inseq[:len].keys
 average_contig = genome_length/ids.length
 
 ##Assign the number of SNPs to each fragment in the shuffled list (hash)
@@ -86,7 +83,7 @@ shuf_hm, shu_snps_hm = Stuff.define_snps(shuf_short_ids, dic_hm)
 
 ####[4] SDM
 ## Calculate scores (number of homozygous SNPs in each contig divided by fragment length)
-dic_shuf_hm_norm = SDM.normalise_by_length(lengths, shuf_hm)
+dic_shuf_hm_norm = SDM.normalise_by_length(inseq[:len], shuf_hm)
 
 ##Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
 #with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
@@ -109,7 +106,7 @@ dic_expected_ratios, expected_ratios, exp_ids_short, exp_inv_ratios = Ratio_filt
 
 ####[5] Outputs
 #Create FASTA file for the contig permutation obtained from SDM
-fasta_perm = Output.create_perm_fasta(perm_hm, frags_shuffled)
+fasta_perm = Output.create_perm_fasta(perm_hm, inseq[:seq])
 File.open("#{loc}/frags_ordered_thres#{threshold}.fasta", "w+") do |f|
   fasta_perm.each { |element| f.puts(element) }
 end

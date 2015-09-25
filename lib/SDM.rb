@@ -8,10 +8,11 @@ class SDM
   ##Output: hashes with IDs as keys and the normalised SNP density as value
   def self.normalise_by_length(lengths, shuf)
     shuf_norm = {}
-    (0..shuf.length-1).each do |x|
-      snp_norm = shuf[shuf.keys[x]].to_f/lengths[x].to_f
-      shuf_norm.store(shuf.keys[x], snp_norm)
-    end
+    shuf.each_key { | frag |
+      # each fragment snp frequency is normalized to the length of the fragment
+      perbp = shuf[frag].to_f / lengths[frag].to_f
+      shuf_norm.store(frag, perbp)
+    }
     shuf_norm = Stuff.safe_invert(shuf_norm)
     return shuf_norm
   end

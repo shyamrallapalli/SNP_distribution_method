@@ -32,6 +32,19 @@ class Stuff
 		return fasta
 	end
 
+  # Input: FASTA file
+  # Output: hash of sequence ids with lengths and seqeunces and total assmebly length
+  def self.fasta_parse(fasta_file)
+    sequences = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    assembly_len = 0
+    Bio::FastaFormat.open(fasta_file).each do |inseq| # get array of fasta format frags, ##  WE NEED TO REORDER THE FASTA FRAGS HERE, TO TEST DIFFERENT ARRANGEMENTS
+      sequences[:seq][inseq.entry_id] = inseq.entry
+      sequences[:len][inseq.entry_id] = inseq.length
+      assembly_len += inseq.length
+    end
+    return sequences, assembly_len
+  end
+
 	# Input: FASTA file
 	# Output: Integer of the length of the genome
 	def self.genome_length(fasta_file)
