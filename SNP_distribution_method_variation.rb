@@ -239,8 +239,33 @@ ht_sh = Ratio_filtering.important_pos(ids_short, dic_pos_ht)
 WriteIt.write_txt("#{output_folder}/hm_snps_short", hm_sh) # save the SNP distributions for the best permutation in the generation
 WriteIt.write_txt("#{output_folder}/ht_snps_short", ht_sh)
 
+
+
+original, outcome = Mutation.ratio_density(frag_pos, inseq[:len], ids_ok, perm_hm)
+File.open("#{log_folder}/t_13_original.yml", "w") do |file|
+  file.write original.to_yaml
+end
+File.open("#{log_folder}/t_14_outcome.yml", "w") do |file|
+  file.write outcome.to_yaml
+end
+
+out_original = File.open("#{log_folder}/t_15_original.txt", "w")
+out_original.puts "Frag\thm\tht\tratio\tlen\thm_pos\tht_pos\n"
+original.each_key { |key|
+  hash = original[key]
+  out_original.puts "#{key}\t#{hash[:hm]}\t#{hash[:ht]}\t#{hash[:ratio]}\t#{hash[:len]}\t#{hash[:hm_pos].join(" ")}\t#{hash[:ht_pos].join(" ")}\n"
+}
+
+out_outcome = File.open("#{log_folder}/t_16_outcome.txt", "w")
+out_outcome.puts "Frag\thm\tht\tratio\tlen\thm_pos\tht_pos\n"
+outcome.each_key { |key|
+  hash = outcome[key]
+  out_outcome.puts "#{key}\t#{hash[:hm]}\t#{hash[:ht]}\t#{hash[:ratio]}\t#{hash[:len]}\t#{hash[:hm_pos].join(" ")}\t#{hash[:ht_pos].join(" ")}\n"
+}
+
 # ###[6] Plots
 
 # #Plot expected vs SDM ratios, QQplots
 
-Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, center, output_folder, mut, frag_pos[:hom])
+candi_peak = Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, center, output_folder, mut, frag_pos[:hom], original, outcome)
+warn "#{candi_peak}\n"

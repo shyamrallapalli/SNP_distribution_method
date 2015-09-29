@@ -7,9 +7,9 @@ require_relative 'write_it'
 require 'pp'
 
 class Mutation
-	def self.test_genomes_define(hm, ht, perm_hm, perm_ht, genome_length, ratios, expected_ratios) 
+	def self.test_genomes_define(hm, ht, perm_hm, perm_ht, genome_length, ratios, expected_ratios)
 		hm.pop
-		div = 100
+		# div = 100
 		n = 2000
 		hyp = SNPdist.hyp_snps(ratios, genome_length)
 		peak =  LocateMutation.find_peak(hyp, n) # Find the peak in the approximated (hypothetical SNP) distribution
@@ -50,7 +50,7 @@ class Mutation
 				'Heterozygous SNP density', ylim_ht[0])
 
 			perm_hyp = SNPdist.hyp_snps(ratios, genome_length)
-			SNPdist.plot_snps(perm_hyp, hyp[0], "SNP_distribution_method/Small_genomes", "#{perm}", 1, genome_length, 'hyp', 
+			SNPdist.plot_snps(perm_hyp, hyp[0], "SNP_distribution_method/Small_genomes", "#{perm}", 1, genome_length, 'hyp',
 				'Approximated ratio of homozygous to heterozygous SNP density', ylim_hyp[0])
 		end
 	end
@@ -62,11 +62,11 @@ class Mutation
 			if frag_pos_hm.has_key?(frag)
 				candidate_mutations.store(frag, frag_pos_hm[frag])
 			end
-		end 
+		end
 		return candidate_mutations
-	end 
+	end
 
-	def self.density_plots(contig_size, ratios, expected_ratios, snps_hm, snps_ht, center, file, mut, frag_pos_hm) 
+	def self.density_plots(contig_size, ratios, expected_ratios, snps_hm, snps_ht, center, file, mut, frag_pos_hm, original, outcome)
 		n = 1048576*4
 		average_positions = SNPdist.general_positions(contig_size, ratios)
 		hyp_ratios = SNPdist.densities_pos(expected_ratios, average_positions)
@@ -76,15 +76,81 @@ class Mutation
 		peak =  LocateMutation.find_peak(hyp_ratios, n) # Find the peak in the approximated (hypothetical SNP) distribution
 		ylim = Plot.get_ylim(hyp_ratios, center)
 		candidate_peak = LocateMutation.closest_snp(peak, snps_hm)
-		Plot::densities(snps_hm, snps_ht, hyp_ratios, center, file)
-		Plot::comparison(real_ratios, hyp_ratios, center, file, ylim)
-		Plot::qqplot(snps_hm, file, "QQplot for hm density", "Theoretical normal distribution", "Hypothetical SNP density")
-		#Plot::qqplot(hyp_ratios, file, "QQplot for the ratios", "Theoretical normal distribution", "Hypothetical ratios")
 		candidate_mutations = Mutation.candidate(mut, frag_pos_hm)
 		File.open("#{file}/mutation.txt", "w+") do |f|
 			f.puts "The length of the group of contigs that form the peak of the distribution is #{center.to_i} bp"
 			f.puts "The mutation is likely to be found on the following contigs #{candidate_mutations}"
-		end 
-		return candidate_peak
+		end
+    original_pos, outcome_pos = [], []
+    candidate_mutations.each_key { |frag|
+      original_pos << original[frag][:hm_pos] if original.key?(frag)
+      outcome_pos << outcome[frag][:hm_pos] if outcome.key?(frag)
+    }
+    original_pos.flatten!
+    outcome_pos.flatten!
+    Plot::densities(snps_hm, snps_ht, hyp_ratios, center, file)
+		Plot::comparison(real_ratios, hyp_ratios, center, file, ylim, original_pos, outcome_pos)
+		Plot::qqplot(snps_hm, file, "QQplot for hm density", "Theoretical normal distribution", "Hypothetical SNP density")
+		#Plot::qqplot(hyp_ratios, file, "QQplot for the ratios", "Theoretical normal distribution", "Hypothetical ratios")
+
+		candidate_peak
 	end
+
+  def self.ratio_density(frag_pos, inseq_len, ids_ok, perm_hm)
+    original = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    outcome = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+
+    asmbly_len = 0
+    ids_ok.each { | frag |
+      original[frag][:hm] = 0.1
+      original[frag][:ht] = 0.1
+      original[frag][:hm_pos] = []
+      original[frag][:ht_pos] = []
+      if frag_pos[:hom].key?(frag)
+        hm_pos = frag_pos[:hom][frag]
+        original[frag][:hm] += hm_pos.length
+        original[frag][:hm_pos] = hm_pos.map { |position| position + asmbly_len }
+      end
+      if frag_pos[:het].key?(frag)
+        ht_pos = frag_pos[:het][frag]
+        original[frag][:ht] += ht_pos.length
+        original[frag][:ht_pos] = ht_pos.map { |position| position + asmbly_len }
+      end
+      if original[frag][:hm] == 0.1 and original[frag][:ht] == 0.1
+        original[frag][:ratio] = 0.0
+      else
+        original[frag][:ratio] = (original[frag][:hm]/original[frag][:ht])/(inseq_len[frag].to_f/1000000.0)
+      end
+      original[frag][:len] = inseq_len[frag].to_i
+      asmbly_len += inseq_len[frag].to_i
+    }
+
+    asmbly_len = 0
+    perm_hm.each { | frag |
+      outcome[frag][:hm] = 0.1
+      outcome[frag][:ht] = 0.1
+      outcome[frag][:hm_pos] = []
+      outcome[frag][:ht_pos] = []
+      if frag_pos[:hom].key?(frag)
+        hm_pos = frag_pos[:hom][frag]
+        outcome[frag][:hm] += hm_pos.length
+        outcome[frag][:hm_pos] = hm_pos.map { |position| position + asmbly_len }
+      end
+      if frag_pos[:het].key?(frag)
+        ht_pos = frag_pos[:het][frag]
+        outcome[frag][:ht] += ht_pos.length
+        outcome[frag][:ht_pos] = ht_pos.map { |position| position + asmbly_len }
+      end
+      if outcome[frag][:hm] == 0.1 and outcome[frag][:ht] == 0.1
+        outcome[frag][:ratio] = 0.0
+      else
+        outcome[frag][:ratio] = (outcome[frag][:hm]/outcome[frag][:ht])/(inseq_len[frag].to_f/1000000.0)
+      end
+      outcome[frag][:len] = inseq_len[frag].to_i
+      asmbly_len += inseq_len[frag].to_i
+    }
+
+    [original, outcome]
+  end
+
 end
