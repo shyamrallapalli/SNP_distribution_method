@@ -60,7 +60,6 @@ class SDM
     #warn "#{average_contig}\n"
     left, right = [], []
     keys= dic_hm_inv.keys.to_a
-    warn "I am at keys\n#{keys}\n"
     (keys.length/2).times do #repeat the sorting process until the original hash is sorted.
       right, left, keys = SDM.divide_array(dic_hm_inv, right, left, keys, 0, cross)
       right, left, keys = SDM.divide_array(dic_hm_inv, right, left, keys, 1, cross)
@@ -69,7 +68,6 @@ class SDM
     #warn "#{left}\n"
     perm = right.flatten << left.compact.flatten.reverse #combine together both sides of the distribution
     perm.flatten!
-    warn "I am at perm\n#{perm}\n"
     mut = []
     # pl = perm.length.to_i
     # r = pl/50
@@ -97,11 +95,9 @@ class SDM
       end
     else
       num = right.flatten.length
-      warn "First number\t#{num}\n"
       if num > 6
           num = 6
       end
-      warn "new number\t#{num}\n"
       mut << right.flatten[-num, num]
       mut << left.flatten[-num, num].reverse
       mut.flatten!
@@ -117,12 +113,7 @@ class SDM
     mut, number_of_snps = [], []
     or_pos = {}
     perm_hm, mut  = SDM.sorting(dic_hm_inv, cross, average_contig) #sorting step based on homozygous SNP density -score-
-    warn "#{perm_hm}\n"
-    warn "#{mut}\n"
-    warn "#{dic_ratios_inv}\n"
     perm_ratio, mut_ratio = SDM.sorting(dic_ratios_inv, cross, average_contig) #repeat the sorting step based on the ratios
-    warn "#{perm_ratio}\n"
-    warn "#{mut_ratio}\n"
     mut << mut_ratio #merge together both candidate contig arrays into one, and remove duplications.
     mut.flatten!
     mut = mut.uniq

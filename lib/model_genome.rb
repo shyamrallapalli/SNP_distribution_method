@@ -12,7 +12,7 @@ class ModelGenome
 	# Output 0: List of homozygous SNPs
 	# Output 1: List of heterozygous SNPs
 	def self.get_snps(hm_code, ht_code)
-		myr = RinRuby.new(echo = false)
+		myr = RinRuby.new(:echo=>false)
 		myr.eval hm_code
 		myr.eval ht_code
 		hm = myr.pull 'hm'
@@ -81,7 +81,7 @@ class ModelGenome
 				actual_pos << snp_pos[t].to_i
 				t += 1
 			end
-			snp_pos_all << actual_pos 
+			snp_pos_all << actual_pos
 			z = 0
 			y = first_pos[p].to_i
 			each_frag_pos.each do |e|
@@ -137,7 +137,7 @@ class ModelGenome
 		end
 		alt = []
 		it = 0
-		ref.each do |base| 
+		ref.each do |base|
 			base == nil ? ref[it] ='T': case base
 			when 'A' then alt << 'T'
 			when 'T' then alt << 'A'
@@ -148,7 +148,7 @@ class ModelGenome
 			end
 			it+=1
 		end
-		vcf_format = ['##fileformat=VCFv4.1', '##source=Fake', '#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO'] 
+		vcf_format = ['##fileformat=VCFv4.1', '##source=Fake', '#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO']
 		u = 0
 		pos_on_frags.flatten.each do |i| #if we increment the pos_on_frags and the snp_pos_all together, we can tell whether each SNP from on_frags is het/homo
 			if hm.include?(snp_pos_all.flatten[u])

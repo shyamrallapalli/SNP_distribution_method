@@ -69,9 +69,9 @@ class Ratio_filtering
 	#Input3 hash with the id and ratio for each fragment
 	def self.csv_pos_ratio(csv, pos, ratios)
 		pos_ratio = {}
-		CSV.open(csv, "wb") do |csv|
-		  csv << ["Position", "Ratio"]
-		end
+#		CSV.open(csv, "wb") do |csv|
+#		  csv << ["Position", "Ratio"]
+#		end
 		short = pos
 		short.each do |id, array|
 		  if ratios.has_key?(id)
@@ -81,11 +81,11 @@ class Ratio_filtering
 		end
 		short.each do |id, array|
 			array.each do |elem|
-		    	CSV.open(csv, "ab") do |csv|
-		      		csv << [elem, ratios[id]]
-		      		pos_ratio.store(elem, ratios[id])
-		      	end
-		    end
+#		  	CSV.open(csv, "ab") do |csv|
+#		  	csv << [elem, ratios[id]]
+		  		pos_ratio.store(elem, ratios[id])
+#		  	end
+		  end
 		end
 		return pos_ratio
 	end
