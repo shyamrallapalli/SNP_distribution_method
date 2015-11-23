@@ -241,7 +241,8 @@ WriteIt.write_txt("#{output_folder}/ht_snps_short", ht_sh)
 
 
 
-original, outcome = Mutation.ratio_density(frag_pos, inseq[:len], ids_ok, perm_hm)
+original = Mutation.varpos_aggregate(frag_pos, inseq[:len], ids_ok, adjust)
+outcome = Mutation.varpos_aggregate(frag_pos, inseq[:len], perm_hm, adjust)
 File.open("#{log_folder}/t_13_original.yml", "w") do |file|
   file.write original.to_yaml
 end
