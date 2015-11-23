@@ -171,8 +171,8 @@ File.open("#{loc}/frags_ordered_thres#{threshold}.fasta", 'w+') do |f|
 end
 
 #ids_or, lengths_or, id_len_or = Stuff.fasta_id_n_lengths(fasta_perm)
-center = average_contig * (perm_hm.length)
-puts "The length of the group of contigs that have a high Hom/het ratio is #{center.to_i} bp"
+region = average_contig * (perm_hm.length)
+puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
 puts '______________________'
 
 # #Create arrays with the  SNP positions in the new ordered file.
@@ -267,5 +267,5 @@ outcome.each_key { |key|
 
 # #Plot expected vs SDM ratios, QQplots
 
-candi_peak = Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, center, output_folder, mut, frag_pos[:hom], original, outcome)
+candi_peak = Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut, frag_pos[:hom], original, outcome)
 warn "#{candi_peak}\n"
