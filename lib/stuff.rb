@@ -67,28 +67,28 @@ class Stuff
 			vcfs_info << v.info # so this will be an array of hashes of strings
 			allele_freq = v.info["AF"].to_f
 			if allele_freq == ht_cutoff
-		        if frag_pos[:het].has_key?(v.chrom)
-		        	frag_pos[:het][v.chrom] << v.pos
-		        else
-		        	frag_pos[:het][v.chrom] = []
-		        	frag_pos[:het][v.chrom] << v.pos
-		        end
-		        ht << v.chrom
-		    elsif allele_freq == hm_cutoff
-		       	if  frag_pos[:hom].has_key?(v.chrom)
-		        	frag_pos[:hom][v.chrom] << v.pos
-		        else
-		        	frag_pos[:hom][v.chrom] = []
-		        	frag_pos[:hom][v.chrom] << v.pos
-		        end
-		        hm << v.chrom 
+		    if frag_pos[:het].has_key?(v.chrom)
+		      frag_pos[:het][v.chrom] << v.pos
+		    else
+		      frag_pos[:het][v.chrom] = []
+		      frag_pos[:het][v.chrom] << v.pos
 		    end
-		end 
-		num_snps_frag_hash = Hash.new(0)
-		vcfs_chrom.each {|v| num_snps_frag_hash[v] +=1 } # we have the number of snps on each frag, by counting the repeats of each frag in the vcf
-		# # the frag_id(.chrom) is the key, the number of snps for that frag is the value. putting the number of snps for each frag into hash
-		snp_data = vcfs_chrom, vcfs_pos, num_snps_frag_hash, vcfs_info
-		return snp_data, hm, ht, frag_pos
+		    ht << v.chrom
+		  elsif allele_freq == hm_cutoff
+		    if  frag_pos[:hom].has_key?(v.chrom)
+		      frag_pos[:hom][v.chrom] << v.pos
+		    else
+		      frag_pos[:hom][v.chrom] = []
+		      frag_pos[:hom][v.chrom] << v.pos
+		    end
+		    hm << v.chrom
+		  end
+		end
+    # putting the number of snps for each frag into hash
+    # frag_id is the key, the number of snps for that frag is the value
+    num_snps_frag_hash = create_hash_number(vcfs_chrom)
+    snp_data = vcfs_chrom, vcfs_pos, num_snps_frag_hash, vcfs_info
+		[snp_data, hm, ht, frag_pos]
 	end
 
 	def self.safe_invert(hash)
@@ -97,31 +97,30 @@ class Stuff
 
 	def self.dic_id_pos(h_ids, snp_list)
 		dic_pos = {}
-	  	(0..snp_list.length - 1).each do |x|
-	  		if dic_pos.has_key?(h_ids[x])
-	  			dic_pos[h_ids[x]] << snp_list[x]
-	  		else
-	  			dic_pos[h_ids[x]] = []
-	  			dic_pos[h_ids[x]] << snp_list[x]
-	  		end
+	  (0..snp_list.length - 1).each do |x|
+	  	if dic_pos.has_key?(h_ids[x])
+	  		dic_pos[h_ids[x]] << snp_list[x]
+	  	else
+	  		dic_pos[h_ids[x]] = []
+	  		dic_pos[h_ids[x]] << snp_list[x]
+	  	end
 	 	end
-	  	return dic_pos
-	end 
+	  dic_pos
+	end
 
 	##Input: Lists of hm and ht SNPs
 	##Output: dictionaries with the id of the fragment as key and the absolute number of SNPs as value
 	def self.create_hash_number(array)
-		hash1 = {}
-		array.uniq.each { |elem| hash1.store("#{elem}", "#{array.count(elem).to_i}") }
-		return hash1
+    array.each_with_object(Hash.new(0)){|string, hash| hash[string] += 1}
 	end
+
 	##Input 1: Array of fragment ids.
 	##Input 2: Hash of hm SNPs
 	##Input 3: Hash of ht SNPs
 	##Assign the number of SNPs to each fragment.
 	##If a fragment does not have SNPs, the value assigned will be 0.
 	##Output1: New hash with the number of SNPs assigned to the unordered fragments
-	##Output2: Array with the number of SNPs 
+	##Output2: Array with the number of SNPs
   	def self.define_snps(ids, dic_snps)
 		dic_snps_num = {}
 		snps = []
@@ -152,23 +151,23 @@ class Stuff
 	  	# id_length.each do |frag, length|
 	  	# 	idlen_s.store(frag, length)
 	  	# 	lens << length
-	  	# end 
-	  	x = 1 
+	  	# end
+	  	x = 1
 	  	lengths.length.times do |i|
-	  		lengths[x] = lengths[x-1].to_i + lengths[x].to_i 
+	  		lengths[x] = lengths[x-1].to_i + lengths[x].to_i
 	  		x += 1
-	  	end 
+	  	end
 
-	  	x = 0 
+	  	x = 0
     	dic_pos.each do |frag, array|
 	  		array.each do |pos|
 	  			pos2 = (pos.to_i+lengths[x].to_i)
 	  			global_array << pos2
-	  		end  
+	  		end
 	  		x += 1
 	  		dic_global_pos.store(frag, global_array)
   			global_array = []
-  		end 
+  		end
 	  	#dic_global_pos = temporal_pos.merge(dic_global_pos)
 	  	all_global_positions = dic_global_pos.values
 	  	all_global_positions.flatten!

@@ -79,8 +79,8 @@ class ReformRatio
 	# Input 1: Array of fragment lengths (integers) (for the same fragment permutation as Input 0)
 	# Output: Array of the snp positions in the genome (assuming the genome is ordered according to the fragment permutation in Input 0)
 	def self.total_pos(pos, fasta_lengths)  # both args in same order as fasta = good. this all works!
-		totals = []                    
-		x = 0						   
+		totals = []
+		x = 0
 		pos.each do |frag|
 			if x == 0
 				totals << frag
