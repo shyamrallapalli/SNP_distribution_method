@@ -21,7 +21,7 @@ if ARGV.length == 6
   # output_folder = ARGV[1]
   # degree of filtering:  100, 50, 10, 5
   threshold = ARGV[2].to_i
-  adjust = ARGV[3]
+  adjust = ARGV[3].to_f
   cross = ARGV[4]
   puts "Looking for SNPs in #{dataset}"
   if threshold > 0
@@ -166,7 +166,7 @@ end
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
 fasta_perm = Output.create_perm_fasta(perm_hm, inseq[:seq])
-File.open("#{loc}/frags_ordered_thres#{threshold}.fasta", 'w+') do |f|
+File.open("#{loc}/ordered_frags_thres#{threshold}.fasta", 'w+') do |f|
   fasta_perm.each { |element| f.puts(element) }
 end
 
