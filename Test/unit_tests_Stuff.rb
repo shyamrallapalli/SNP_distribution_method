@@ -7,20 +7,9 @@ class TestSuff < Test::Unit::TestCase
 	def setup
 		@vcf_file = "test/test.vcf"
 		@fasta_file = "test/test.fasta"
-		@f_array = Stuff::fasta_array("test/test.fasta")
+		@f_array = FastaHandle.fasta_array("test/test.fasta")
 	end
 
-	def test_fasta_id_n_lengths
-		ids_n_lengths = Stuff::fasta_id_n_lengths(@f_array)
-		ids = ids_n_lengths[0]
-		lengths = ids_n_lengths[1]
-		assert_equal(['frag1', 'frag2', 'frag3'], ids)
-		assert_equal([11,8,8], lengths)
-	end
-	def test_genome_length
-		total_length = Stuff::genome_length("test/test.fasta")
-		assert_equal(total_length, 27)
-	end 
 	def test_snps_in_vcf
 		snp_data, hm, ht = Stuff.snps_in_vcf(@vcf_file)
 		assert_equal(["frag1", "frag1"], hm)

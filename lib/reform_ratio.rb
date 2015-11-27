@@ -91,10 +91,10 @@ class ReformRatio
 	# Output 0: Array of the heterozyogus SNP positions for the genome according to the Input 0 permutation
 	# Output 1: Array of the homozygous SNP positions for the genome according to the Input 0 permutation
 	def self.perm_pos(fasta, snp_data)
-		snps_per_frag = ReformRatio::snps_per_fasta_frag(snp_data[2], fasta) # array of no. of snps per frag in same order as fasta
-		pos_n_info = ReformRatio::get_positions(fasta, snp_data[0], snp_data[1], snps_per_frag, snp_data[3]) # get snp positions for each frag in array of arrays
-		actual_pos = ReformRatio::total_pos(pos_n_info[0], ReformRatio::fasta_id_n_lengths(fasta)[1])
-		het_snps, hom_snps = ReformRatio::het_hom(actual_pos, pos_n_info[1])
+		snps_per_frag = ReformRatio.snps_per_fasta_frag(snp_data[2], fasta) # array of no. of snps per frag in same order as fasta
+		pos_n_info = ReformRatio.get_positions(fasta, snp_data[0], snp_data[1], snps_per_frag, snp_data[3]) # get snp positions for each frag in array of arrays
+		actual_pos = ReformRatio.total_pos(pos_n_info[0], FastaHandle.fasta_id_n_lengths(fasta)[1])
+		het_snps, hom_snps = ReformRatio.het_hom(actual_pos, pos_n_info[1])
 		return het_snps, hom_snps
 	end
 end
