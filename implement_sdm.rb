@@ -16,41 +16,43 @@ require 'csv'
 require 'yaml'
 require 'fileutils'
 
-if ARGV.length == 6
-  dataset = ARGV[0]
-  # output_folder = ARGV[1]
-  # degree of filtering:  100, 50, 10, 5
-  threshold = ARGV[2].to_i
-  adjust = ARGV[3].to_f
-  cross = ARGV[4]
-  puts "Looking for SNPs in #{dataset}"
-  if threshold > 0
-    puts "Filtering step on: #{threshold}% selected"
-  elsif threshold == 0
-    puts 'Filtering step off. '
-  else
-    puts 'Not valid filtering value, plese specify 0 to skip filtering or a positive integer to allow it'
-    exit
-  end
-  puts "A factor of #{adjust} will be used to calculate the ratio"
-else
-  puts "Please specify a (1) dataset, a (2) name for the output folder, a (3) threshold to discard the contigs which a ratio below it \
-  and a (4) factor to calculate the ratio (1, 0.1, 0.01...) (5) kind of cross: back or out"
+if ARGV[0] == 'help' or ARGV[0] == '-h'
+  puts "Please specify (1) a dataset directory,\n\
+  (2) a name for the output folder,\n\
+  (3) a threshold for ratio to discard the contigs\n\
+  (4) a adjusting factor to calculate the ratio (1, 0.1, 0.01...)\n\
+  (5) kind of cross: back or out and any additional log folder details in a \"input_pars.yml\" file"
+  exit
 end
 
 #### Inputs
 ### shuffled genome and variants from the shuffled genome
-loc = "#{dataset}"
-fasta_shuffle = "#{loc}/frags_shuffled.fasta"
-vcf_file = "#{loc}/snps.vcf"
+# filter parameter are to be read from a file in the current folder
+pars = YAML.load_file("./input_pars.yml")
+loc = pars['indir'].chomp("/")
+fasta_shuffle = "#{loc}/#{pars['fasta']}"
+vcf_file = "#{loc}/#{pars['vcf']}"
+adjust = pars['ratio_adj']
+threshold = pars['filter']
+output_folder = "#{loc}/#{pars['outdir']}_#{threshold}_#{adjust}"
+log_folder = "#{loc}/#{pars['logdir']}_#{threshold}_#{adjust}"
 
-output_folder = "#{loc}/#{ARGV[1].chomp}"
-puts "Output will be in #{output_folder}"
-log_folder = "#{loc}/#{ARGV[5].chomp}"
 # Make Output directory
-#Dir.mkdir("#{output_folder}")
 FileUtils.mkdir_p "#{output_folder}"
 FileUtils.mkdir_p "#{log_folder}"
+
+puts "Looking for SNPs in #{dataset}"
+if threshold > 0
+  puts "Filtering step on: #{threshold}% selected"
+elsif threshold == 0
+  puts 'Filtering step off. '
+else
+  puts 'Not valid filtering value, plese specify 0 to skip filtering or a positive integer to allow it'
+  exit
+end
+
+puts "A factor of #{adjust} will be used to calculate the ratio"
+
 
 # ###[1] Open VCF file
 snp_data, hm, ht, frag_pos = Stuff.snps_in_vcf(vcf_file)

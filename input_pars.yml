@@ -1,0 +1,13 @@
+# "Please specify a (1) dataset, a (2) name for the output folder, a (3) threshold to discard the contigs which a ratio below it \
+# and a (4) factor to calculate the ratio (1, 0.1, 0.01...) (5) kind of cross: back or out"
+indir: '~/git-hub-repos/shyamrallapalli/SNP_distribution_method/test_sdm'
+fasta: 'frags_shuffled.fasta'
+vcf: 'snps.vcf'
+outdir: 'sdm_out'
+logdir: 'sdm_log'
+# degree of filtering:  100, 50, 10, 5
+# cut off filter calculated as percent of maximum ratio
+filter: 0
+# 1 or 0.1 or 0.01 etc will be added to numertator and denominator
+ratio_adj: 0.5
+cross: out
