@@ -2,39 +2,6 @@
 class ReformRatio
 	require 'bio'
 	require 'bio-samtools'
-	# Input: Array of Bio::FastaFormat entries
-	# Output 0: Array of identifiers
-	# Output 1: Array of lengths (integers)
-	def self.fasta_id_n_lengths(fasta)
-		ids, lengths = [], []
-		id_len = {}
-		fasta.each do |i|
-			ids << i.entry_id
-			lengths << i.length
-			id_len.store(i.entry_id, i.length)
-		end
-		return ids, lengths, id_len
-	end
-
-	# Input: FASTA file
-	# Output: Array of Bio::FastaFormat entries
-	def self.fasta_array(fasta_file)
-		fasta = [] # we have the lengths of each fasta, but the frags are different to those of the vcf/hash(this only has the frags w snps)
-		Bio::FastaFormat.open(fasta_file).each do |i| # get array of fasta format frags, ##  WE NEED TO REORDER THE FASTA FRAGS HERE, TO TEST DIFFERENT ARRANGEMENTS
-			fasta << i
-		end
-		return fasta
-	end
-
-	# Input: FASTA file
-	# Output: Integer of the length of the genome
-	def self.genome_length(fasta_file)
-		lengths = []
-		fasta_array(fasta_file).each do |frag|
-			lengths << frag.length
-		end
-		return lengths.inject(:+)
-	end
 
 	# Input 0: Hash with fragment id keys and the corresponding number of snps as an integer values
 	# Input 1: Array of Bio::FastaFormat entries
