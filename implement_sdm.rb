@@ -1,14 +1,12 @@
 # encoding: utf-8
 
-require_relative 'lib/write_it'
-require_relative 'lib/stuff'
+require_relative 'lib/fasta_handle'
 require_relative 'lib/mutation'
-require_relative 'lib/SDM'
-require_relative 'lib/snp_dist'
-require_relative 'lib/plot'
 require_relative 'lib/ratio_filtering'
-require_relative 'lib/output'
 require_relative 'lib/reform_ratio'
+require_relative 'lib/SDM'
+require_relative 'lib/stuff'
+require_relative 'lib/write_it'
 
 require 'pp'
 require 'benchmark'
@@ -16,32 +14,36 @@ require 'csv'
 require 'yaml'
 require 'fileutils'
 
-if ARGV[0] == 'help' or ARGV[0] == '-h'
-  puts "Please specify (1) a dataset directory,\n\
+if ARGV.empty?
+  puts "  Please specify a dataset directory,\n\
+  and place in it a \"input_pars.yml\" file with\n\
+  following details\n\
+  (1) name of input sequences (fasta) and variant (vcf) files\n\
   (2) a name for the output folder,\n\
   (3) a threshold for ratio to discard the contigs\n\
-  (4) a adjusting factor to calculate the ratio (1, 0.1, 0.01...)\n\
-  (5) kind of cross: back or out and any additional log folder details in a \"input_pars.yml\" file"
+  (4) a adjusting factor to calculate the ratio (1, 0.5, 0.1, 0.01...)\n\
+  (5) kind of cross: back or out and any additional log folder details"
   exit
 end
 
+loc = ARGV[0]
+FileUtils.cd("#{loc}")
 #### Inputs
-### shuffled genome and variants from the shuffled genome
-# filter parameter are to be read from a file in the current folder
+### sequences and variants from the shuffled genome
+# filter parameter are to be read from a "input_pars.yml" file in the current folder
 pars = YAML.load_file("./input_pars.yml")
-loc = pars['indir'].chomp("/")
-fasta_shuffle = "#{loc}/#{pars['fasta']}"
-vcf_file = "#{loc}/#{pars['vcf']}"
-adjust = pars['ratio_adj']
-threshold = pars['filter']
-output_folder = "#{loc}/#{pars['outdir']}_#{threshold}_#{adjust}"
-log_folder = "#{loc}/#{pars['logdir']}_#{threshold}_#{adjust}"
+fasta_shuffle = pars['fasta']
+vcf_file = pars['vcf']
+adjust = pars['ratio_adj'].to_f
+threshold = pars['filter'].to_i
+cross = pars['cross']
+output_folder = "#{pars['outdir']}_#{threshold}_#{adjust}"
+log_folder = "#{pars['logdir']}_#{threshold}_#{adjust}"
 
 # Make Output directory
 FileUtils.mkdir_p "#{output_folder}"
 FileUtils.mkdir_p "#{log_folder}"
 
-puts "Looking for SNPs in #{dataset}"
 if threshold > 0
   puts "Filtering step on: #{threshold}% selected"
 elsif threshold == 0
@@ -77,7 +79,7 @@ end
 
 # ###[2] Open FASTA files containing the unordered contigs
 # #Create a hash with shuffled fragments seq ids - values are lengths and sequences
-inseq, genome_length = Stuff.fasta_parse(fasta_shuffle)
+inseq, genome_length = FastaHandle.fasta_parse(fasta_shuffle)
 ids = inseq[:len].keys
 average_contig = genome_length / ids.length
 
@@ -144,7 +146,7 @@ dic_or_ht, snps_ht_or = Stuff.define_snps(perm_hm, dic_ht)
 File.open("#{log_folder}/4_6_dic_or_hm.yml", "w") do |file|
   file.write dic_or_hm.to_yaml
 end
-WriteIt::write_txt("#{log_folder}/4_7_snps_hm_or", snps_hm_or)
+WriteIt.write_txt("#{log_folder}/4_7_snps_hm_or", snps_hm_or)
 
 File.open("#{log_folder}/4_8_dic_or_ht.yml", "w") do |file|
   file.write dic_or_ht.to_yaml
@@ -167,12 +169,11 @@ end
 
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
-fasta_perm = Output.create_perm_fasta(perm_hm, inseq[:seq])
-File.open("#{loc}/ordered_frags_thres#{threshold}.fasta", 'w+') do |f|
+fasta_perm = FastaHandle.create_perm_fasta(perm_hm, inseq[:seq])
+File.open("ordered_frags_thres#{threshold}.fasta", 'w+') do |f|
   fasta_perm.each { |element| f.puts(element) }
 end
 
-#ids_or, lengths_or, id_len_or = Stuff.fasta_id_n_lengths(fasta_perm)
 region = average_contig * (perm_hm.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
 puts '______________________'
@@ -186,9 +187,9 @@ WriteIt.write_txt("#{output_folder}/perm_ht", het_snps)
 ########## Test comparison inputs and analysis
 
 ### Ordered genome and variants in ordered genome
-fasta_file = "#{loc}/frags.fasta"
-hm_list = WriteIt.file_to_ints_array("#{loc}/hm_snps.txt") # create arrays for SNP densities
-ht_list = WriteIt.file_to_ints_array("#{loc}/ht_snps.txt")
+fasta_file = "frags.fasta"
+hm_list = WriteIt.file_to_ints_array("hm_snps.txt") # create arrays for SNP densities
+ht_list = WriteIt.file_to_ints_array("ht_snps.txt")
 
 # #Hashes with fragments ids and SNP positions for the correctly ordered genome
 dic_pos_hm =  Stuff.dic_id_pos(hm, hm_list)
@@ -202,7 +203,7 @@ end
 
 # #Open FASTA files containing the ordered contigs
 # #from the array take ids and lengths
-inseq_ok, genome_length = Stuff.fasta_parse(fasta_file)
+inseq_ok, genome_length = FastaHandle.fasta_parse(fasta_file)
 ids_ok = inseq_ok[:len].keys
 
 # #Assign the number of SNPs to each fragment in the ordered list (hash)
@@ -222,8 +223,8 @@ dic_ratios, ratios, ids_short, dic_ratios_inv  = Ratio_filtering.important_ratio
 File.open("#{log_folder}/t_07_dic_ratios.yml", "w") do |file|
   file.write dic_ratios.to_yaml
 end
-WriteIt::write_txt("#{log_folder}/t_08_ratios", ratios)
-WriteIt::write_txt("#{log_folder}/t_09_ids_short", ids_short)
+WriteIt.write_txt("#{log_folder}/t_08_ratios", ratios)
+WriteIt.write_txt("#{log_folder}/t_09_ids_short", ids_short)
 File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
   file.write dic_ratios_inv.to_yaml
 end
@@ -233,7 +234,7 @@ s_hm, s_snps_hm = Stuff.define_snps(ids_short, dic_hm)
 File.open("#{log_folder}/t_11_s_hm.yml", "w") do |file|
   file.write s_hm.to_yaml
 end
-WriteIt::write_txt("#{log_folder}/t_12_s_snps_hm", s_snps_hm)
+WriteIt.write_txt("#{log_folder}/t_12_s_snps_hm", s_snps_hm)
 
 hm_sh = Ratio_filtering.important_pos(ids_short, dic_pos_hm)
 ht_sh = Ratio_filtering.important_pos(ids_short, dic_pos_ht)
@@ -271,4 +272,4 @@ outcome.each_key { |key|
 # #Plot expected vs SDM ratios, QQplots
 
 candi_peak = Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut, frag_pos[:hom], original, outcome)
-warn "#{candi_peak}\n"
+puts "#{candi_peak}\n"
