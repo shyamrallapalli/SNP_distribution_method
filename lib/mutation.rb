@@ -2,7 +2,7 @@
 require_relative 'snp_dist'
 require_relative 'reform_ratio'
 require_relative 'plot'
-require_relative 'write_it'
+require_relative 'file_rw'
 require 'simple_stats'
 require 'pp'
 
@@ -49,11 +49,11 @@ class Mutation
 	def self.test_genomes_distribution_plot(genome_length, ratios, expected_ratios, dataset, perm)
 		hm, ht, hyp, ylim_hm, ylim_ht, ylim_hyp = [],[],[],[],[],[]
 		Dir.chdir(File.join(Dir.home, "SNP_distribution_method/Small_genomes/#{perm}")) do
-			hom_snps = WriteIt.file_to_ints_array("hm_snps_short.txt")
+			hom_snps = FileRW.to_array_int("hm_snps_short.txt")
 			hm << hom_snps
 			ylim_hm << Plot.get_ylim(hom_snps, genome_length)
 
-			het_snps = WriteIt.file_to_ints_array("ht_snps_short.txt")
+			het_snps = FileRW.to_array_int("ht_snps_short.txt")
 			ht << het_snps
 			ylim_ht << Plot.get_ylim(het_snps, genome_length)
 
@@ -64,11 +64,11 @@ class Mutation
 
 		Dir.chdir(File.join(Dir.home, "SNP_distribution_method/Small_genomes/#{perm}")) do
 
-			perm_hm = WriteIt.file_to_ints_array("perm_hm.txt")
+			perm_hm = FileRW.to_array_int("perm_hm.txt")
 			Plot.plot_snps(perm_hm, hm[0], "SNP_distribution_method/Small_genomes", "#{perm}", 1, genome_length, 'hm',
 				'Homozygous SNP density', ylim_hm[0])
 
-			perm_ht = WriteIt.file_to_ints_array("perm_ht.txt")
+			perm_ht = FileRW.to_array_int("perm_ht.txt")
 			Plot.plot_snps(perm_ht, ht[0], "SNP_distribution_method/Small_genomes", "#{perm}", 1, genome_length, 'ht',
 				'Heterozygous SNP density', ylim_ht[0])
 
@@ -94,8 +94,8 @@ class Mutation
 		average_positions = SNPdist.general_positions(contig_size, ratios)
 		hyp_ratios = SNPdist.densities_pos(expected_ratios, average_positions)
 		real_ratios = SNPdist.densities_pos(ratios, average_positions)
-		WriteIt::write_txt("#{file}/hyp_ratios", hyp_ratios)
-		WriteIt::write_txt("#{file}/ratios", real_ratios)
+		FileRW.write_txt("#{file}/hyp_ratios", hyp_ratios)
+		FileRW.write_txt("#{file}/ratios", real_ratios)
 		peak =  find_peak(hyp_ratios, n) # Find the peak in the approximated (hypothetical SNP) distribution
 		ylim = Plot.get_ylim(hyp_ratios, region)
 		candidate_peak = closest_snp(peak, snps_hm)
@@ -116,10 +116,10 @@ class Mutation
 		outcome_mean = outcome_pos.mean
 		adj_mean = original_mean - outcome_mean
 		outcome_pos.map! {|x| x + adj_mean.to_i }
-		Plot::densities(snps_hm, snps_ht, hyp_ratios, region, file)
-		Plot::comparison(real_ratios, hyp_ratios, genome_len, file, ylim, original_pos, outcome_pos)
-		Plot::qqplot(snps_hm, file, "QQplot for hm density", "Theoretical normal distribution", "Hypothetical SNP density", "hm_snps")
-		Plot::qqplot(hyp_ratios, file, "QQplot for the ratios", "Theoretical normal distribution", "Hypothetical ratios", "ratios")
+		Plot.densities(snps_hm, snps_ht, hyp_ratios, region, file)
+		Plot.comparison(real_ratios, hyp_ratios, genome_len, file, ylim, original_pos, outcome_pos)
+		Plot.qqplot(snps_hm, file, "QQplot for hm density", "Theoretical normal distribution", "Hypothetical SNP density", "hm_snps")
+		Plot.qqplot(hyp_ratios, file, "QQplot for the ratios", "Theoretical normal distribution", "Hypothetical ratios", "ratios")
 
 		candidate_peak
 	end

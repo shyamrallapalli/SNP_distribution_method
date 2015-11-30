@@ -1,6 +1,6 @@
 #encoding: utf-8
 require_relative '../lib/vcf'
-require_relative '../lib/write_it'
+require_relative '../lib/file_rw'
 require 'test/unit'
 
 class TestVCF < Test::Unit::TestCase

@@ -1,13 +1,13 @@
 # encoding: utf-8
 
 require_relative 'lib/fasta_handle'
+require_relative 'lib/file_rw'
 require_relative 'lib/mutation'
 require_relative 'lib/ratio_filtering'
 require_relative 'lib/reform_ratio'
 require_relative 'lib/SDM'
 require_relative 'lib/stuff'
 require_relative 'lib/vcf'
-require_relative 'lib/write_it'
 
 require 'pp'
 require 'benchmark'
@@ -62,8 +62,8 @@ snp_data, hm, ht, frag_pos = Vcf.snps_in_vcf(vcf_file)
 File.open("#{log_folder}/1_1_snp_data.yml", "w") do |file|
   file.write snp_data.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/1_2_hm_positions", hm)
-WriteIt.write_txt("#{log_folder}/1_3_ht_positions", ht)
+FileRW.write_txt("#{log_folder}/1_2_hm_positions", hm)
+FileRW.write_txt("#{log_folder}/1_3_ht_positions", ht)
 File.open("#{log_folder}/1_4_frag_pos.yml", "w") do |file|
   file.write frag_pos.to_yaml
 end
@@ -91,12 +91,12 @@ shuf_ht, shuf_snps_ht = Vcf.define_snps(ids, dic_ht)
 File.open("#{log_folder}/2_1_shuf_hm.yml", "w") do |file|
   file.write shuf_hm.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/2_2_shuf_snps_hm", shuf_snps_hm)
+FileRW.write_txt("#{log_folder}/2_2_shuf_snps_hm", shuf_snps_hm)
 
 File.open("#{log_folder}/2_3_shuf_ht.yml", "w") do |file|
   file.write shuf_ht.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/2_4_shuf_snps_ht", shuf_snps_ht)
+FileRW.write_txt("#{log_folder}/2_4_shuf_snps_ht", shuf_snps_ht)
 
 # ###[3]
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
@@ -104,8 +104,8 @@ dic_ratios_shuf, ratios_shuf, ids_short_shuf, dic_ratios_inv_shuf = Ratio_filter
 File.open("#{log_folder}/3_1_dic_ratios_shuf.yml", "w") do |file|
   file.write dic_ratios_shuf.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/3_2_ratios_shuf", ratios_shuf)
-WriteIt.write_txt("#{log_folder}/3_3_ids_short_shuf", ids_short_shuf)
+FileRW.write_txt("#{log_folder}/3_2_ratios_shuf", ratios_shuf)
+FileRW.write_txt("#{log_folder}/3_3_ids_short_shuf", ids_short_shuf)
 File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", "w") do |file|
   file.write dic_ratios_inv_shuf.to_yaml
 end
@@ -113,14 +113,14 @@ end
 # #Redefine the arrays of SNPs after discarding the contigs that fell below the threshold provided.
 # #We refered to them as the "important contigs" and the SNPs on those are the "important positions"
 shuf_short_ids = Ratio_filtering.important_ids(ids_short_shuf, ids)
-WriteIt.write_txt("#{log_folder}/3_5_shuf_short_ids", shuf_short_ids)
+FileRW.write_txt("#{log_folder}/3_5_shuf_short_ids", shuf_short_ids)
 
 # #Calculate how many contigs were discarded
 shuf_hm, shu_snps_hm = Vcf.define_snps(shuf_short_ids, dic_hm)
 File.open("#{log_folder}/3_6_shuf_hm.yml", "w") do |file|
   file.write shuf_hm.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/3_7_shu_snps_hm", shu_snps_hm)
+FileRW.write_txt("#{log_folder}/3_7_shu_snps_hm", shu_snps_hm)
 
 # ###[4] SDM
 ## Calculate scores (number of homozygous SNPs in each contig divided by fragment length)
@@ -133,13 +133,13 @@ end
 # with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
 # to reconstruct the right side of the distribution, and left, for the left side)
 perm_hm, perm_ratio, mut, hyp_positions = SDM.calling_SDM(dic_shuf_hm_norm, dic_ratios_inv_shuf, frag_pos[:hom], cross, average_contig)
-WriteIt.write_txt("#{log_folder}/4_2_perm_hm", perm_hm)
-WriteIt.write_txt("#{log_folder}/4_3_perm_ratio", perm_ratio)
-WriteIt.write_txt("#{log_folder}/4_4_mut", mut)
-WriteIt.write_txt("#{log_folder}/4_5_hyp_positions", hyp_positions)
+FileRW.write_txt("#{log_folder}/4_2_perm_hm", perm_hm)
+FileRW.write_txt("#{log_folder}/4_3_perm_ratio", perm_ratio)
+FileRW.write_txt("#{log_folder}/4_4_mut", mut)
+FileRW.write_txt("#{log_folder}/4_5_hyp_positions", hyp_positions)
 
 puts "Hypothetical positions carrying the causal mutation #{hyp_positions}"
-WriteIt.write_txt("#{output_folder}/hyp_positions", hyp_positions)
+FileRW.write_txt("#{output_folder}/hyp_positions", hyp_positions)
 
 # #Define SNPs in the r ordered array of fragments.
 dic_or_hm, snps_hm_or = Vcf.define_snps(perm_hm, dic_hm)
@@ -147,12 +147,12 @@ dic_or_ht, snps_ht_or = Vcf.define_snps(perm_hm, dic_ht)
 File.open("#{log_folder}/4_6_dic_or_hm.yml", "w") do |file|
   file.write dic_or_hm.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/4_7_snps_hm_or", snps_hm_or)
+FileRW.write_txt("#{log_folder}/4_7_snps_hm_or", snps_hm_or)
 
 File.open("#{log_folder}/4_8_dic_or_ht.yml", "w") do |file|
   file.write dic_or_ht.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/4_9_snps_ht_or", snps_ht_or)
+FileRW.write_txt("#{log_folder}/4_9_snps_ht_or", snps_ht_or)
 
 # ###[5]
 # thres = 0
@@ -162,8 +162,8 @@ dic_expected_ratios, expected_ratios, exp_ids_short, exp_inv_ratios = Ratio_filt
 File.open("#{log_folder}/5_1_dic_expected_ratios.yml", "w") do |file|
   file.write dic_expected_ratios.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/5_2_expected_ratios", expected_ratios)
-WriteIt.write_txt("#{log_folder}/5_3_exp_ids_short", exp_ids_short)
+FileRW.write_txt("#{log_folder}/5_2_expected_ratios", expected_ratios)
+FileRW.write_txt("#{log_folder}/5_3_exp_ids_short", exp_ids_short)
 File.open("#{log_folder}/5_4_exp_inv_ratios.yml", "w") do |file|
   file.write exp_inv_ratios.to_yaml
 end
@@ -182,15 +182,15 @@ puts '______________________'
 # #Create arrays with the  SNP positions in the new ordered file.
 het_snps, hom_snps = ReformRatio.perm_pos(fasta_perm, snp_data)
 
-WriteIt.write_txt("#{output_folder}/perm_hm", hom_snps)
-WriteIt.write_txt("#{output_folder}/perm_ht", het_snps)
+FileRW.write_txt("#{output_folder}/perm_hm", hom_snps)
+FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
 
 ########## Test comparison inputs and analysis
 
 ### Ordered genome and variants in ordered genome
 fasta_file = "frags.fasta"
-hm_list = WriteIt.file_to_ints_array("hm_snps.txt") # create arrays for SNP densities
-ht_list = WriteIt.file_to_ints_array("ht_snps.txt")
+hm_list = FileRW.file_to_ints_array("hm_snps.txt") # create arrays for SNP densities
+ht_list = FileRW.file_to_ints_array("ht_snps.txt")
 
 # #Hashes with fragments ids and SNP positions for the correctly ordered genome
 dic_pos_hm =  Vcf.dic_id_pos(hm, hm_list)
@@ -213,19 +213,19 @@ ok_ht, snps_ht = Vcf.define_snps(ids_ok, dic_ht)
 File.open("#{log_folder}/t_03_ok_hm.yml", "w") do |file|
   file.write ok_hm.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/t_04_snps_hm", snps_hm)
+FileRW.write_txt("#{log_folder}/t_04_snps_hm", snps_hm)
 File.open("#{log_folder}/t_05_ok_ht.yml", "w") do |file|
   file.write ok_ht.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/t_06_snps_ht", snps_ht)
+FileRW.write_txt("#{log_folder}/t_06_snps_ht", snps_ht)
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
 dic_ratios, ratios, ids_short, dic_ratios_inv  = Ratio_filtering.important_ratios(snps_hm, snps_ht, ids_ok, threshold, adjust)
 File.open("#{log_folder}/t_07_dic_ratios.yml", "w") do |file|
   file.write dic_ratios.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/t_08_ratios", ratios)
-WriteIt.write_txt("#{log_folder}/t_09_ids_short", ids_short)
+FileRW.write_txt("#{log_folder}/t_08_ratios", ratios)
+FileRW.write_txt("#{log_folder}/t_09_ids_short", ids_short)
 File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
   file.write dic_ratios_inv.to_yaml
 end
@@ -235,13 +235,13 @@ s_hm, s_snps_hm = Vcf.define_snps(ids_short, dic_hm)
 File.open("#{log_folder}/t_11_s_hm.yml", "w") do |file|
   file.write s_hm.to_yaml
 end
-WriteIt.write_txt("#{log_folder}/t_12_s_snps_hm", s_snps_hm)
+FileRW.write_txt("#{log_folder}/t_12_s_snps_hm", s_snps_hm)
 
 hm_sh = Ratio_filtering.important_pos(ids_short, dic_pos_hm)
 ht_sh = Ratio_filtering.important_pos(ids_short, dic_pos_ht)
 
-WriteIt.write_txt("#{output_folder}/hm_snps_short", hm_sh) # save the SNP distributions for the best permutation in the generation
-WriteIt.write_txt("#{output_folder}/ht_snps_short", ht_sh)
+FileRW.write_txt("#{output_folder}/hm_snps_short", hm_sh) # save the SNP distributions for the best permutation in the generation
+FileRW.write_txt("#{output_folder}/ht_snps_short", ht_sh)
 
 
 

@@ -1,6 +1,6 @@
 #encoding: utf-8
 
-require_relative 'write_it'
+require_relative 'file_rw'
 require 'rinruby'
 
 class Plot

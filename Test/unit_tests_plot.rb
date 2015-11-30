@@ -1,12 +1,12 @@
 #encoding: utf-8
 require_relative '../lib/plot'
-require_relative '../lib/write_it'
+require_relative '../lib/file_rw'
 require 'test/unit'
 
 class TestPlot < Test::Unit::TestCase
 
 	def setup
-		@ratios = WriteIt.file_to_floats_array("test/ratios_example.txt")
+		@ratios = FileRW.to_array_float("test/ratios_example.txt")
 		@contig_size = 10
 	end
 
