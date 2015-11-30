@@ -66,14 +66,14 @@ class Plot
     myr.quit
   end
 
-  def self.get_ylim(density, genome_length)
-      myr = RinRuby.new(:echo=>false)
-      myr.assign 'density', density
-      myr.assign 'genome_length', genome_length
-      myr.eval 'plot((1:512)*(genome_length/512), density(density)$y)'
-      ylim = myr.pull 'par("yaxp")[2] + par("yaxp")[2]/par("yaxp")[3]'
-      myr.quit
-  return ylim
+  def self.get_ylim(array, genome_length)
+    myr = RinRuby.new(:echo=>false)
+    myr.assign 'array', array
+    myr.assign 'genome_length', genome_length
+    myr.eval 'plot((1:512)*(genome_length/512), density(array)$y)'
+    ylim = myr.pull 'par("yaxp")[2] + par("yaxp")[2]/par("yaxp")[3]'
+    myr.quit
+    ylim
   end
 
   def self.comparison(real_ratios, hypothetical, length, location, ylim, original_pos, outcome_pos)
@@ -102,6 +102,25 @@ class Plot
     abline(v=original_pos, col = "red", lty=2)
     dev.off()'
     myr.quit
+  end
+
+  def self.plot_snps(snp_pos, correct_snps, location, dataset_run, gen, genome_length, type, title, ylim)
+		myr = RinRuby.new(:echo=>false)
+		myr.snp_pos = snp_pos
+		myr.location = location
+		myr.correct_snps = correct_snps
+		myr.genome_length = genome_length
+		myr.dataset_run = dataset_run
+		myr.gen = gen
+		myr.type = type
+		myr.title = title
+		myr.ylim = ylim
+		myr.eval 'png(paste("~/",location,"/", dataset_run, "/Plot_", type, ".png", sep=""))
+		plot((1:512)*(genome_length/512), density(snp_pos)$y, xlim=c(0,genome_length), ylim=c(0,ylim), xlab="Genome length",
+			ylab="Density", main=title)
+		lines((1:512)*(genome_length/512), density(correct_snps)$y, lwd=3, col="#000099")
+		dev.off()'
+		myr.quit
   end
 
 end

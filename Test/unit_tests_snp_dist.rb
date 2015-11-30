@@ -19,10 +19,6 @@ class TestSNPdist < Test::Unit::TestCase
 		@pos = [10, 20, 30, 40, 50, 60, 70]
 		densities = SNPdist.densities_pos(@ratios, @pos)
 		assert_equal([10, 20, 30, 30, 40, 40, 40, 40, 40, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 60, 60, 70], densities)
-	end 
-
-	def test_ylim
-		ylim = SNPdist.get_ylim([1,2,3,4,5], 2000, 'density')
-		assert_equal(0.25, ylim)
 	end
+
 end
