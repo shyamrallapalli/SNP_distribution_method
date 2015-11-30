@@ -189,8 +189,8 @@ FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
 
 ### Ordered genome and variants in ordered genome
 fasta_file = "frags.fasta"
-hm_list = FileRW.file_to_ints_array("hm_snps.txt") # create arrays for SNP densities
-ht_list = FileRW.file_to_ints_array("ht_snps.txt")
+hm_list = FileRW.to_array_int("hm_snps.txt") # create arrays for SNP densities
+ht_list = FileRW.to_array_int("ht_snps.txt")
 
 # #Hashes with fragments ids and SNP positions for the correctly ordered genome
 dic_pos_hm =  Vcf.dic_id_pos(hm, hm_list)

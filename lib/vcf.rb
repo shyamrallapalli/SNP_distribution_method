@@ -1,6 +1,7 @@
 # encoding: utf-8
 require 'bio'
 require 'bio-samtools'
+require_relative 'stuff'
 
 class Vcf
 
@@ -36,7 +37,7 @@ class Vcf
 		end
     # putting the number of snps for each frag into hash
     # frag_id is the key, the number of snps for that frag is the value
-    num_snps_frag_hash = create_hash_number(vcfs_chrom)
+    num_snps_frag_hash = Stuff.create_hash_number(vcfs_chrom)
     snp_data = vcfs_chrom, vcfs_pos, num_snps_frag_hash, vcfs_info
 		[snp_data, hm, ht, frag_pos]
 	end
