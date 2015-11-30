@@ -1,5 +1,3 @@
-
-
 #encoding: utf-8
 require_relative 'stuff'
 require 'csv'
@@ -39,7 +37,6 @@ class Ratio_filtering
 		return dic_ratios, ratios, ids_s, dic_ratios_inv
 	end
 
-
 	def self.important_ids(ids_short, ids)
 		shuf_short_ids = []
 		ids_short.flatten!
@@ -51,6 +48,7 @@ class Ratio_filtering
 		shuf_short_ids.flatten!
 		return shuf_short_ids
 	end
+
 	def self.important_pos(ids_short, pos)
 		sh = []
 		pos.each do |frag, positions|

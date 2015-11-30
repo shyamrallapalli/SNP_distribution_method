@@ -15,7 +15,8 @@ class SNPdist
 		end
 		positions
 	end
-	# Input 0: The homozygous, heterozygous or ratio densities in the ordered genome.
+
+  # Input 0: The homozygous, heterozygous or ratio densities in the ordered genome.
 	# Input 1: Previous output. A list of "hypothetical"  positions
 	# Output: A list of "hypothetical" SNP positions which represents the distribution of hm, ht SNPs or  homozygous/heterozygous SNP density ratio
 	def self.densities_pos(raw_densities, positions)
@@ -56,6 +57,7 @@ class SNPdist
 		end
 		return hyp # These don't need to be unique or integers like the real SNPs, since they are just representing a distribution
 	end
+
 	def self.plot_snps(snp_pos, correct_snps, location, dataset_run, gen, genome_length, type, title, ylim)
 		myr = RinRuby.new(:echo=>false)
 		myr.snp_pos = snp_pos

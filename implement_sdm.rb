@@ -6,6 +6,7 @@ require_relative 'lib/ratio_filtering'
 require_relative 'lib/reform_ratio'
 require_relative 'lib/SDM'
 require_relative 'lib/stuff'
+require_relative 'lib/vcf'
 require_relative 'lib/write_it'
 
 require 'pp'
@@ -57,7 +58,7 @@ puts "A factor of #{adjust} will be used to calculate the ratio"
 
 
 # ###[1] Open VCF file
-snp_data, hm, ht, frag_pos = Stuff.snps_in_vcf(vcf_file)
+snp_data, hm, ht, frag_pos = Vcf.snps_in_vcf(vcf_file)
 File.open("#{log_folder}/1_1_snp_data.yml", "w") do |file|
   file.write snp_data.to_yaml
 end
@@ -85,8 +86,8 @@ average_contig = genome_length / ids.length
 
 # #Assign the number of SNPs to each fragment in the shuffled list (hash)
 # #If a fragment does not have SNPs, the value assigned will be 0.
-shuf_hm, shuf_snps_hm = Stuff.define_snps(ids, dic_hm)
-shuf_ht, shuf_snps_ht = Stuff.define_snps(ids, dic_ht)
+shuf_hm, shuf_snps_hm = Vcf.define_snps(ids, dic_hm)
+shuf_ht, shuf_snps_ht = Vcf.define_snps(ids, dic_ht)
 File.open("#{log_folder}/2_1_shuf_hm.yml", "w") do |file|
   file.write shuf_hm.to_yaml
 end
@@ -115,7 +116,7 @@ shuf_short_ids = Ratio_filtering.important_ids(ids_short_shuf, ids)
 WriteIt.write_txt("#{log_folder}/3_5_shuf_short_ids", shuf_short_ids)
 
 # #Calculate how many contigs were discarded
-shuf_hm, shu_snps_hm = Stuff.define_snps(shuf_short_ids, dic_hm)
+shuf_hm, shu_snps_hm = Vcf.define_snps(shuf_short_ids, dic_hm)
 File.open("#{log_folder}/3_6_shuf_hm.yml", "w") do |file|
   file.write shuf_hm.to_yaml
 end
@@ -141,8 +142,8 @@ puts "Hypothetical positions carrying the causal mutation #{hyp_positions}"
 WriteIt.write_txt("#{output_folder}/hyp_positions", hyp_positions)
 
 # #Define SNPs in the r ordered array of fragments.
-dic_or_hm, snps_hm_or = Stuff.define_snps(perm_hm, dic_hm)
-dic_or_ht, snps_ht_or = Stuff.define_snps(perm_hm, dic_ht)
+dic_or_hm, snps_hm_or = Vcf.define_snps(perm_hm, dic_hm)
+dic_or_ht, snps_ht_or = Vcf.define_snps(perm_hm, dic_ht)
 File.open("#{log_folder}/4_6_dic_or_hm.yml", "w") do |file|
   file.write dic_or_hm.to_yaml
 end
@@ -192,8 +193,8 @@ hm_list = WriteIt.file_to_ints_array("hm_snps.txt") # create arrays for SNP dens
 ht_list = WriteIt.file_to_ints_array("ht_snps.txt")
 
 # #Hashes with fragments ids and SNP positions for the correctly ordered genome
-dic_pos_hm =  Stuff.dic_id_pos(hm, hm_list)
-dic_pos_ht =  Stuff.dic_id_pos(ht, ht_list)
+dic_pos_hm =  Vcf.dic_id_pos(hm, hm_list)
+dic_pos_ht =  Vcf.dic_id_pos(ht, ht_list)
 File.open("#{log_folder}/t_01_dic_pos_hm.yml", "w") do |file|
   file.write dic_pos_hm.to_yaml
 end
@@ -207,8 +208,8 @@ inseq_ok, genome_length = FastaHandle.fasta_parse(fasta_file)
 ids_ok = inseq_ok[:len].keys
 
 # #Assign the number of SNPs to each fragment in the ordered list (hash)
-ok_hm, snps_hm = Stuff.define_snps(ids_ok, dic_hm)
-ok_ht, snps_ht = Stuff.define_snps(ids_ok, dic_ht)
+ok_hm, snps_hm = Vcf.define_snps(ids_ok, dic_hm)
+ok_ht, snps_ht = Vcf.define_snps(ids_ok, dic_ht)
 File.open("#{log_folder}/t_03_ok_hm.yml", "w") do |file|
   file.write ok_hm.to_yaml
 end
@@ -230,7 +231,7 @@ File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
 end
 
 
-s_hm, s_snps_hm = Stuff.define_snps(ids_short, dic_hm)
+s_hm, s_snps_hm = Vcf.define_snps(ids_short, dic_hm)
 File.open("#{log_folder}/t_11_s_hm.yml", "w") do |file|
   file.write s_hm.to_yaml
 end
