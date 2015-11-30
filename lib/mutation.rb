@@ -1,5 +1,4 @@
 #encoding: utf-8
-require_relative 'locate_mutation'
 require_relative 'snp_dist'
 require_relative 'reform_ratio'
 require_relative 'plot'
@@ -8,17 +7,40 @@ require 'simple_stats'
 require 'pp'
 
 class Mutation
+
+  # Input 0: List of SNP positions
+  # Input 1: The number of equally spaced points at which the density is to be estimated. Specify n as a power of two.
+  # Output: The highest kernel density value for this SNP distribution
+  def self.find_peak(snps, n)
+    myr = RinRuby.new(:echo=>false)
+    myr.n = n
+    myr.snps = snps
+    myr.eval 'kernel_density <- density(snps, n=n)'
+    myr.eval 'index <- match(max(kernel_density$y),kernel_density$y)' # this only finds the first index with the max density if there is > 1
+    myr.eval 'peak <- kernel_density$x[index]'
+    peak = myr.pull 'peak'
+    myr.quit
+    peak.to_i
+  end
+
+  # Input 0: Value under distribution peak (genome position as a float)
+  # Input 1: List of homozygous SNP positions
+  # Output: The closest homozygous SNP to the peak
+  def self.closest_snp(peak, hm)
+    hm.min { |a, b| (peak - a).abs <=> (peak - b).abs }
+  end
+
 	def self.test_genomes_define(hm, ht, perm_hm, perm_ht, genome_length, ratios, expected_ratios)
 		hm.pop
 		# div = 100
 		n = 2000
 		hyp = SNPdist.hyp_snps(ratios, genome_length)
-		peak =  LocateMutation.find_peak(hyp, n) # Find the peak in the approximated (hypothetical SNP) distribution
-		causal = LocateMutation.closest_snp(peak, hm)
+		peak =  find_peak(hyp, n) # Find the peak in the approximated (hypothetical SNP) distribution
+		causal = closest_snp(peak, hm)
 		perm_hyp = SNPdist.hyp_snps(expected_ratios, genome_length)
 
-		perm_peak = LocateMutation.find_peak(perm_hyp, n)
-		candidate = LocateMutation.closest_snp(perm_peak, perm_hm)
+		perm_peak = find_peak(perm_hyp, n)
+		candidate = closest_snp(perm_peak, perm_hm)
 		normalised = (candidate - causal).abs
 		percent = (normalised*100)/genome_length.to_f
 		return causal, candidate, percent
@@ -74,9 +96,9 @@ class Mutation
 		real_ratios = SNPdist.densities_pos(ratios, average_positions)
 		WriteIt::write_txt("#{file}/hyp_ratios", hyp_ratios)
 		WriteIt::write_txt("#{file}/ratios", real_ratios)
-		peak =  LocateMutation.find_peak(hyp_ratios, n) # Find the peak in the approximated (hypothetical SNP) distribution
+		peak =  find_peak(hyp_ratios, n) # Find the peak in the approximated (hypothetical SNP) distribution
 		ylim = Plot.get_ylim(hyp_ratios, region)
-		candidate_peak = LocateMutation.closest_snp(peak, snps_hm)
+		candidate_peak = closest_snp(peak, snps_hm)
 		candidate_mutations = Mutation.candidate(mut, frag_pos_hm)
 		File.open("#{file}/mutation.txt", "w+") do |f|
 			f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
