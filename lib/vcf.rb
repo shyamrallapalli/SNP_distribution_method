@@ -6,33 +6,43 @@ require_relative 'stuff'
 class Vcf
 
   ##Input: vcf file
-	##Ouput: lists of hm and ht SNPS and hash of all fragments with variants
-	def self.snps_in_vcf(vcf_file, ht_cutoff=0.5, hm_cutoff=1.0)
-		var_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-		File.open(vcf_file, "r").each do |line|
-			next if line =~ /^#/
-			v = Bio::DB::Vcf.new(line)
-			allele_freq = v.info["AF"].to_f
+  ##Ouput: lists of hm and ht SNPS and hash of all fragments with variants
+  def self.snps_in_vcf(vcf_file, ht_cutoff=0.5, hm_cutoff=1.0)
+    # hash of :het and :hom with frag ids and respective variant positions
+    var_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    File.open(vcf_file, "r").each do |line|
+      next if line =~ /^#/
+      v = Bio::DB::Vcf.new(line)
+      allele_freq = v.info["AF"].to_f
       if allele_freq == ht_cutoff
-		    if var_pos[:het].has_key?(v.chrom)
-		      var_pos[:het][v.chrom] << v.pos
-		    else
-		      var_pos[:het][v.chrom] = []
-		      var_pos[:het][v.chrom] << v.pos
-		    end
-		    ht << v.chrom
+        if var_pos[:het].has_key?(v.chrom)
+          var_pos[:het][v.chrom] << v.pos
+        else
+          var_pos[:het][v.chrom] = []
+          var_pos[:het][v.chrom] << v.pos
+        end
+        ht << v.chrom
       elsif allele_freq == hm_cutoff
-		    if  var_pos[:hom].has_key?(v.chrom)
-		      var_pos[:hom][v.chrom] << v.pos
-		    else
-		      var_pos[:hom][v.chrom] = []
-		      var_pos[:hom][v.chrom] << v.pos
-		    end
-		    hm << v.chrom
+        if  var_pos[:hom].has_key?(v.chrom)
+          var_pos[:hom][v.chrom] << v.pos
+        else
+          var_pos[:hom][v.chrom] = []
+          var_pos[:hom][v.chrom] << v.pos
+        end
+        hm << v.chrom
       end
-		end
-		[hm, ht, var_pos]
-	end
+    end
+
+    # hash of :het and :hom with frag ids and respective variant count
+    var_num = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    var_pos.keys.each do | vars |
+      var_pos[vars].keys.each do | id |
+        num_vars = var_pos[vars][id].length
+        var_num[vars][id] = num_vars
+      end
+    end
+    [var_num, var_pos]
+  end
 
   def self.dic_id_pos(h_ids, snp_list)
 		dic_pos = {}
