@@ -262,7 +262,7 @@ outcome.each_key { |key|
 }
 
 # #Create arrays with the  SNP positions in the new ordered file.
-het_snps, hom_snps = Vcf.varpositions(outcome)
+hom_snps, het_snps = Vcf.varpositions(outcome)
 
 FileRW.write_txt("#{output_folder}/perm_hm", hom_snps)
 FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
