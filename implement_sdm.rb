@@ -114,8 +114,8 @@ end
 FileRW.write_txt("#{log_folder}/3_7_shu_snps_hm", shu_snps_hm)
 
 # ###[4] SDM
-## Calculate scores (number of homozygous SNPs in each contig divided by fragment length)
-dic_shuf_hm_norm = SDM.normalise_by_length(inseq[:len], shuf_hm)
+# invert hash with ratios as keys and fragments as values
+dic_shuf_hm_norm = Stuff.safe_invert(shuf_hm)
 File.open("#{log_folder}/4_1_dic_shuf_hm_norm.yml", "w") do |file|
   file.write dic_shuf_hm_norm.to_yaml
 end
