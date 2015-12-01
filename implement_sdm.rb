@@ -57,10 +57,7 @@ puts "A factor of #{adjust} will be used to calculate the ratio"
 
 
 # ###[1] Open VCF file
-snp_data, hm, ht, frag_pos = Vcf.snps_in_vcf(vcf_file)
-File.open("#{log_folder}/1_1_snp_data.yml", "w") do |file|
-  file.write snp_data.to_yaml
-end
+hm, ht, frag_pos = Vcf.snps_in_vcf(vcf_file)
 FileRW.write_txt("#{log_folder}/1_2_hm_positions", hm)
 FileRW.write_txt("#{log_folder}/1_3_ht_positions", ht)
 File.open("#{log_folder}/1_4_frag_pos.yml", "w") do |file|

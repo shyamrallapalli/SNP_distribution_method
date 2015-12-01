@@ -6,40 +6,32 @@ require_relative 'stuff'
 class Vcf
 
   ##Input: vcf file
-	##Ouput: lists of hm and ht SNPS
+	##Ouput: lists of hm and ht SNPS and hash of all fragments with variants
 	def self.snps_in_vcf(vcf_file, ht_cutoff=0.5, hm_cutoff=1.0)
-		vcfs_chrom, vcfs_pos, vcfs_info, hm, ht = [], [], [], [], []
-		frag_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-		File.open(vcf_file, "r").each do |line| # get array of vcf lines, you can call a method on one line
+		var_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+		File.open(vcf_file, "r").each do |line|
 			next if line =~ /^#/
 			v = Bio::DB::Vcf.new(line)
-			vcfs_chrom << v.chrom
-			vcfs_pos << v.pos
-			vcfs_info << v.info # so this will be an array of hashes of strings
 			allele_freq = v.info["AF"].to_f
       if allele_freq == ht_cutoff
-		    if frag_pos[:het].has_key?(v.chrom)
-		      frag_pos[:het][v.chrom] << v.pos
+		    if var_pos[:het].has_key?(v.chrom)
+		      var_pos[:het][v.chrom] << v.pos
 		    else
-		      frag_pos[:het][v.chrom] = []
-		      frag_pos[:het][v.chrom] << v.pos
+		      var_pos[:het][v.chrom] = []
+		      var_pos[:het][v.chrom] << v.pos
 		    end
 		    ht << v.chrom
       elsif allele_freq == hm_cutoff
-		    if  frag_pos[:hom].has_key?(v.chrom)
-		      frag_pos[:hom][v.chrom] << v.pos
+		    if  var_pos[:hom].has_key?(v.chrom)
+		      var_pos[:hom][v.chrom] << v.pos
 		    else
-		      frag_pos[:hom][v.chrom] = []
-		      frag_pos[:hom][v.chrom] << v.pos
+		      var_pos[:hom][v.chrom] = []
+		      var_pos[:hom][v.chrom] << v.pos
 		    end
 		    hm << v.chrom
       end
 		end
-    # putting the number of snps for each frag into hash
-    # frag_id is the key, the number of snps for that frag is the value
-    num_snps_frag_hash = Stuff.create_hash_number(vcfs_chrom)
-    snp_data = vcfs_chrom, vcfs_pos, num_snps_frag_hash, vcfs_info
-		[snp_data, hm, ht, frag_pos]
+		[hm, ht, var_pos]
 	end
 
   def self.dic_id_pos(h_ids, snp_list)
