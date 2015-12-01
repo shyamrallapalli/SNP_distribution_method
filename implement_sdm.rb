@@ -4,7 +4,6 @@ require_relative 'lib/fasta_handle'
 require_relative 'lib/file_rw'
 require_relative 'lib/mutation'
 require_relative 'lib/ratio_filtering'
-require_relative 'lib/reform_ratio'
 require_relative 'lib/SDM'
 require_relative 'lib/stuff'
 require_relative 'lib/vcf'
@@ -179,12 +178,6 @@ region = average_contig * (perm_hm.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
 puts '______________________'
 
-# #Create arrays with the  SNP positions in the new ordered file.
-het_snps, hom_snps = ReformRatio.perm_pos(fasta_perm, snp_data)
-
-FileRW.write_txt("#{output_folder}/perm_hm", hom_snps)
-FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
-
 ########## Test comparison inputs and analysis
 
 ### Ordered genome and variants in ordered genome
@@ -267,6 +260,12 @@ outcome.each_key { |key|
   hash = outcome[key]
   out_outcome.puts "#{key}\t#{hash[:hm]}\t#{hash[:ht]}\t#{hash[:ratio]}\t#{hash[:len]}\t#{hash[:hm_pos].join(" ")}\t#{hash[:ht_pos].join(" ")}\n"
 }
+
+# #Create arrays with the  SNP positions in the new ordered file.
+het_snps, hom_snps = Vcf.varpositions(outcome)
+
+FileRW.write_txt("#{output_folder}/perm_hm", hom_snps)
+FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
 
 # ###[6] Plots
 
