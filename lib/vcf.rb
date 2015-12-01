@@ -21,7 +21,6 @@ class Vcf
           var_pos[:het][v.chrom] = []
           var_pos[:het][v.chrom] << v.pos
         end
-        ht << v.chrom
       elsif allele_freq == hm_cutoff
         if  var_pos[:hom].has_key?(v.chrom)
           var_pos[:hom][v.chrom] << v.pos
@@ -29,7 +28,6 @@ class Vcf
           var_pos[:hom][v.chrom] = []
           var_pos[:hom][v.chrom] << v.pos
         end
-        hm << v.chrom
       end
     end
 
@@ -42,19 +40,6 @@ class Vcf
       end
     end
     [var_num, var_pos]
-  end
-
-  def self.dic_id_pos(h_ids, snp_list)
-		dic_pos = {}
-	  (0..snp_list.length - 1).each do |x|
-	  	if dic_pos.has_key?(h_ids[x])
-	  		dic_pos[h_ids[x]] << snp_list[x]
-	  	else
-	  		dic_pos[h_ids[x]] = []
-	  		dic_pos[h_ids[x]] << snp_list[x]
-	  	end
-	 	end
-	  dic_pos
   end
 
   ##Input 1: Array of fragment ids.
@@ -235,6 +220,25 @@ class Vcf
       ht_list << fragdetails[frag][:ht_pos]
     }
     [hm_list.flatten!, ht_list.flatten!]
+  end
+
+  # function to get a hash of frag ids and cumulative variant positions
+  # input: a hash of frag ids with all details and variant positions
+  # hash input is resutled from varpos_aggregate method
+  # output: a has of frag ids and cumulative variant positions
+  def self.frag_positions(fragdetails)
+    farg_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    fragdetails.keys.each { | frag |
+      hm_pos = fragdetails[frag][:hm_pos]
+      ht_pos = fragdetails[frag][:ht_pos]
+      unless hm_pos.empty?
+        farg_pos[:hom][frag] = hm_pos
+      end
+      unless ht_pos.empty?
+        farg_pos[:het][frag] = ht_pos
+      end
+    }
+    farg_pos
   end
 
 end

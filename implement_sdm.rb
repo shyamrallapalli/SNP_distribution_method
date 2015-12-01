@@ -123,7 +123,7 @@ end
 # #Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
 # with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
 # to reconstruct the right side of the distribution, and left, for the left side)
-perm_hm, perm_ratio, mut, hyp_positions = SDM.calling_SDM(dic_shuf_hm_norm, dic_ratios_inv_shuf, frag_pos[:hom], cross, average_contig)
+perm_hm, perm_ratio, mut, hyp_positions = SDM.calling_SDM(dic_shuf_hm_norm, dic_ratios_inv_shuf, var_pos[:hom], cross, average_contig)
 FileRW.write_txt("#{log_folder}/4_2_perm_hm", perm_hm)
 FileRW.write_txt("#{log_folder}/4_3_perm_ratio", perm_ratio)
 FileRW.write_txt("#{log_folder}/4_4_mut", mut)
@@ -172,25 +172,21 @@ puts '______________________'
 
 ########## Test comparison inputs and analysis
 
-### Ordered genome and variants in ordered genome
-fasta_file = "frags.fasta"
-
 # #Open FASTA files containing the ordered contigs
 # #from the array take ids and lengths
+fasta_file = "frags.fasta"
 inseq_ok, genome_length = FastaHandle.fasta_parse(fasta_file)
 ids_ok = inseq_ok[:len].keys
 
-hm_list = FileRW.to_array_int("hm_snps.txt") # create arrays for SNP densities
-ht_list = FileRW.to_array_int("ht_snps.txt")
+original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
 
 # #Hashes with fragments ids and SNP positions for the correctly ordered genome
-dic_pos_hm =  Vcf.dic_id_pos(hm, hm_list)
-dic_pos_ht =  Vcf.dic_id_pos(ht, ht_list)
+origin_pos = Vcf.frag_positions(original)
 File.open("#{log_folder}/t_01_dic_pos_hm.yml", "w") do |file|
-  file.write dic_pos_hm.to_yaml
+  file.write origin_pos[:hom].to_yaml
 end
 File.open("#{log_folder}/t_02_dic_pos_ht.yml", "w") do |file|
-  file.write dic_pos_ht.to_yaml
+  file.write origin_pos[:het].to_yaml
 end
 
 # #Assign the number of SNPs to each fragment in the ordered list (hash)
@@ -223,16 +219,14 @@ File.open("#{log_folder}/t_11_s_hm.yml", "w") do |file|
 end
 FileRW.write_txt("#{log_folder}/t_12_s_snps_hm", s_snps_hm)
 
-hm_sh = Ratio_filtering.important_pos(ids_short, dic_pos_hm)
-ht_sh = Ratio_filtering.important_pos(ids_short, dic_pos_ht)
+hm_sh = Ratio_filtering.important_pos(ids_short, origin_pos[:hom])
+ht_sh = Ratio_filtering.important_pos(ids_short, origin_pos[:het])
 
 FileRW.write_txt("#{output_folder}/hm_snps_short", hm_sh) # save the SNP distributions for the best permutation in the generation
 FileRW.write_txt("#{output_folder}/ht_snps_short", ht_sh)
 
 
-
-original = Vcf.varpos_aggregate(frag_pos, inseq[:len], ids_ok, adjust)
-outcome = Vcf.varpos_aggregate(frag_pos, inseq[:len], perm_hm, adjust)
+outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], perm_hm, adjust)
 File.open("#{log_folder}/t_13_original.yml", "w") do |file|
   file.write original.to_yaml
 end
@@ -264,5 +258,5 @@ FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
 
 # #Plot expected vs SDM ratios, QQplots
 
-candi_peak = Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut, frag_pos[:hom], original, outcome)
+candi_peak = Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut, var_pos[:hom], original, outcome)
 puts "#{candi_peak}\n"
