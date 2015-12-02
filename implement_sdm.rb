@@ -154,17 +154,6 @@ File.open("#{log_folder}/t_02_dic_pos_ht.yml", "w") do |file|
   file.write origin_pos[:het].to_yaml
 end
 
-# #Assign the number of SNPs to each fragment in the ordered list (hash)
-ok_hm, snps_hm = Vcf.define_snps(ids_ok, var_num[:hom])
-ok_ht, snps_ht = Vcf.define_snps(ids_ok, var_num[:het])
-File.open("#{log_folder}/t_03_ok_hm.yml", "w") do |file|
-  file.write ok_hm.to_yaml
-end
-FileRW.write_txt("#{log_folder}/t_04_snps_hm", snps_hm)
-File.open("#{log_folder}/t_05_ok_ht.yml", "w") do |file|
-  file.write ok_ht.to_yaml
-end
-FileRW.write_txt("#{log_folder}/t_06_snps_ht", snps_ht)
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
 ratios, original, dic_ratios_inv  = Ratio_filtering.selected_ratios(original, threshold)
@@ -172,13 +161,6 @@ FileRW.write_txt("#{log_folder}/t_08_ratios", ratios)
 File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
   file.write dic_ratios_inv.to_yaml
 end
-
-
-hm_sh = Ratio_filtering.important_pos(original.keys, origin_pos[:hom])
-ht_sh = Ratio_filtering.important_pos(original.keys, origin_pos[:het])
-
-FileRW.write_txt("#{output_folder}/hm_snps_short", hm_sh) # save the SNP distributions for the best permutation in the generation
-FileRW.write_txt("#{output_folder}/ht_snps_short", ht_sh)
 
 
 outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], perm_hm, adjust)
@@ -213,5 +195,4 @@ FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
 
 # #Plot expected vs SDM ratios, QQplots
 
-candi_peak = Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut, var_pos[:hom], original, outcome)
-puts "#{candi_peak}\n"
+Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut, var_pos[:hom], original, outcome)

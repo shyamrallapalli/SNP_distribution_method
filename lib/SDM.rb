@@ -1,7 +1,9 @@
 #encoding: utf-8
-require_relative 'stuff'
+#require_relative 'stuff'
 
 class SDM
+
+=begin
   ##Inputs: hashes with IDs as keys and the SNP density as value
   ##Divide absolute number of SNPs by the length of the given fragment.
   ##Output: hashes with IDs as keys and the normalised SNP density as value
@@ -15,6 +17,7 @@ class SDM
     shuf_norm = Stuff.safe_invert(shuf_norm)
     return shuf_norm
   end
+=end
 
   def self.divide_array(dic_hm_inv, right, left, keys_hm, dest, cross)
     contigs_at_min = []
@@ -94,13 +97,15 @@ class SDM
           mut << left[-left.length, left.length].reverse
           mut.flatten!
         end
-      # In case of a out-cross, 50 contigs in the middle part of the permutation taken
+      # In case of a out-cross, 40 contigs in the middle part of the permutation taken
       elsif cross == "out"
         if smaller.length > 20
           mut << right[-20, 20]
           mut << left[-20, 20].reverse
           mut.flatten!
-        else #If a strong filtering step reduces the total number of contigs to a number lower than 20, perm.length/2 contigs on the right and perm.length/2 on the left side of the middle point are taken.
+        # If a strong filtering step reduces the total number of contigs to a number lower than 20,
+        # perm.length/2 contigs on the right and perm.length/2 on the left side of the middle point are taken.
+        else
           mut << right[-right.length, right.length]
           mut << left[-left.length, left.length].reverse
           mut.flatten!
