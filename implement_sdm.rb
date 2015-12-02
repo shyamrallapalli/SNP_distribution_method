@@ -80,27 +80,9 @@ File.open("#{log_folder}/t_17_input_frags.yml", "w") do |file|
   file.write input_frags.to_yaml
 end
 
-
-# #Assign the number of SNPs to each fragment in the shuffled list (hash)
-# #If a fragment does not have SNPs, the value assigned will be 0.
-shuf_hm, shuf_snps_hm = Vcf.define_snps(ids, var_num[:hom])
-shuf_ht, shuf_snps_ht = Vcf.define_snps(ids, var_num[:het])
-File.open("#{log_folder}/2_1_shuf_hm.yml", "w") do |file|
-  file.write shuf_hm.to_yaml
-end
-FileRW.write_txt("#{log_folder}/2_2_shuf_snps_hm", shuf_snps_hm)
-
-File.open("#{log_folder}/2_3_shuf_ht.yml", "w") do |file|
-  file.write shuf_ht.to_yaml
-end
-FileRW.write_txt("#{log_folder}/2_4_shuf_snps_ht", shuf_snps_ht)
-
 # ###[3]
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
-dic_ratios_shuf, ratios_shuf, ids_short_shuf, dic_ratios_inv_shuf = Ratio_filtering.important_ratios(shuf_snps_hm, shuf_snps_ht, ids, threshold, adjust)
-File.open("#{log_folder}/3_1_dic_ratios_shuf.yml", "w") do |file|
-  file.write dic_ratios_shuf.to_yaml
-end
+ratios_shuf, ids_short_shuf, dic_ratios_inv_shuf = Ratio_filtering.selected_ratios(input_frags, ratios, threshold)
 FileRW.write_txt("#{log_folder}/3_2_ratios_shuf", ratios_shuf)
 FileRW.write_txt("#{log_folder}/3_3_ids_short_shuf", ids_short_shuf)
 File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", "w") do |file|
@@ -150,7 +132,7 @@ FileRW.write_txt("#{log_folder}/4_9_snps_ht_or", snps_ht_or)
 # thres = 0
 # pp thres
 # Calculate ratios in the contig permutation obtained from SDM
-dic_expected_ratios, expected_ratios, exp_ids_short, exp_inv_ratios = Ratio_filtering.important_ratios(snps_hm_or, snps_ht_or, perm_hm, threshold, adjust)
+dic_expected_ratios, expected_ratios, exp_ids_short, exp_inv_ratios = Ratio_filtering.selected_ratios(snps_hm_or, snps_ht_or, perm_hm, threshold, adjust)
 File.open("#{log_folder}/5_1_dic_expected_ratios.yml", "w") do |file|
   file.write dic_expected_ratios.to_yaml
 end
@@ -203,7 +185,7 @@ end
 FileRW.write_txt("#{log_folder}/t_06_snps_ht", snps_ht)
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-dic_ratios, ratios, ids_short, dic_ratios_inv  = Ratio_filtering.important_ratios(snps_hm, snps_ht, ids_ok, threshold, adjust)
+dic_ratios, ratios, ids_short, dic_ratios_inv  = Ratio_filtering.selected_ratios(snps_hm, snps_ht, ids_ok, threshold, adjust)
 File.open("#{log_folder}/t_07_dic_ratios.yml", "w") do |file|
   file.write dic_ratios.to_yaml
 end

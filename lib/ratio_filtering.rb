@@ -4,38 +4,46 @@ require 'csv'
 
 class Ratio_filtering
 
-	def self.important_ratios(snps_hm, snps_ht, ids, threshold, adjust)
-		dic_ratios, ratios, ids_s = {}, [], []
-		# dic_ratios_by_length = {}
-		(0..snps_hm.length-1).each do |x|
-			ratio = (snps_hm[x]+adjust.to_f)/(snps_ht[x]+adjust.to_f)
-			dic_ratios.store(ids[x], ratio.to_f)
-		end
-		if threshold > 0
-			thres = 100.0/threshold.to_f
-			filter = (dic_ratios.values.max.to_f)/thres
-			dic_ratios.delete_if { |id, ratio|  ratio <= filter.to_f}
-			ratios << dic_ratios.values
-			ratios.flatten!
-			ids_s = dic_ratios.keys
-			dic_ratios_inv = Stuff.safe_invert(dic_ratios)
-			contigs_discarded = ids.length - ids_s.length
-			puts "#{contigs_discarded} contigs out of #{ids.length} discarded"
-			while ids_s.length > 30*contigs_discarded do
-				threshold = threshold + 2
-				puts "threshold #{threshold}%"
-				dic_ratios, ratios, ids_s, dic_ratios_inv  = Ratio_filtering.important_ratios(snps_hm, snps_ht, ids, threshold, adjust)
-				contigs_discarded = ids.length - ids_s.length
-			end
-		else
-			# contigs_discarded = ids.length - ids_s.length
-			ratios << dic_ratios.values
-			ratios.flatten!
-			ids_s = dic_ratios.keys
-			dic_ratios_inv = Stuff.safe_invert(dic_ratios)
-		end
-		return dic_ratios, ratios, ids_s, dic_ratios_inv
-	end
+  def self.get_ratios(inhash)
+    ratios = []
+    inhash.keys.each do | frag |
+      ratios << inhash[frag][:ratio]
+    end
+    ratios
+  end
+
+  def self.selected_ratios(inhash, threshold)
+    initial = inhash.keys.length
+    ratios = get_ratios(inhash)
+
+    if threshold > 0
+      thres = 100.0/threshold.to_f
+      filter = (ratios.max.to_f)/thres
+      # delete fragment information below selected threshold
+      inhash.keys.each do | frag |
+        if inhash[frag][:ratio] <= filter
+          inhash.delete(frag)
+        end
+      end
+      ratios = get_ratios(inhash)
+      sel_ids = inhash.keys
+      contigs_discarded = initial - sel_ids.length
+      puts "#{contigs_discarded} contigs out of #{initial} discarded"
+
+      # go through selection if the threshold of discarded fragments is low
+      while sel_ids.length > 30*contigs_discarded do
+        threshold = threshold + 2
+        puts "threshold #{threshold}%"
+        dic_ratios, ratios, sel_ids, dic_ratios_inv  = Ratio_filtering.selected_ratios(inhash, threshold)
+        contigs_discarded = initial - sel_ids.length
+      end
+      dic_ratios_inv = Stuff.safe_invert(dic_ratios)
+    else
+      sel_ids = inhash.keys
+      dic_ratios_inv = Stuff.safe_invert(dic_ratios)
+    end
+    return ratios, sel_ids, inhash
+  end
 
 	def self.important_pos(ids_short, pos)
 		sh = []
