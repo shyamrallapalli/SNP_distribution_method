@@ -75,6 +75,12 @@ inseq, genome_length = FastaHandle.fasta_parse(fasta_shuffle)
 ids = inseq[:len].keys
 average_contig = genome_length / ids.length
 
+input_frags = Vcf.varpos_aggregate(var_pos, inseq[:len], ids, adjust, "no")
+File.open("#{log_folder}/t_17_input_frags.yml", "w") do |file|
+  file.write input_frags.to_yaml
+end
+
+
 # #Assign the number of SNPs to each fragment in the shuffled list (hash)
 # #If a fragment does not have SNPs, the value assigned will be 0.
 shuf_hm, shuf_snps_hm = Vcf.define_snps(ids, var_num[:hom])

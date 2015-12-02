@@ -179,7 +179,7 @@ class Vcf
   # input4: ratio adjustment factor
   # output: a hash of frag ids with all details and variant positions
   # are accumulated using length and order of fragments
-  def self.varpos_aggregate(frag_info, frag_len, frag_order, ratio_adjust)
+  def self.varpos_aggregate(frag_info, frag_len, frag_order, ratio_adjust, cumulate="yes")
     details = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     asmbly_len = 0
     frag_order.each { | frag |
@@ -203,7 +203,9 @@ class Vcf
         details[frag][:ratio] = details[frag][:hm]/details[frag][:ht]
       end
       details[frag][:len] = frag_len[frag].to_i
-      asmbly_len += frag_len[frag].to_i
+      if cumulate == "yes"
+        asmbly_len += frag_len[frag].to_i
+      end
     }
     details
   end
