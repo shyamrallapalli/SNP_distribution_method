@@ -82,15 +82,14 @@ end
 
 # ###[3]
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
-ratios_shuf, ids_short_shuf, dic_ratios_inv_shuf = Ratio_filtering.selected_ratios(input_frags, ratios, threshold)
+ratios_shuf, input_frags, dic_ratios_inv_shuf = Ratio_filtering.selected_ratios(input_frags, threshold)
 FileRW.write_txt("#{log_folder}/3_2_ratios_shuf", ratios_shuf)
-FileRW.write_txt("#{log_folder}/3_3_ids_short_shuf", ids_short_shuf)
 File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", "w") do |file|
   file.write dic_ratios_inv_shuf.to_yaml
 end
 
 # #Calculate how many contigs were discarded
-shuf_hm, shu_snps_hm = Vcf.define_snps(ids_short_shuf, var_num[:hom])
+shuf_hm, shu_snps_hm = Vcf.define_snps(input_frags.keys, var_num[:hom])
 File.open("#{log_folder}/3_6_shuf_hm.yml", "w") do |file|
   file.write shuf_hm.to_yaml
 end
@@ -115,32 +114,15 @@ FileRW.write_txt("#{log_folder}/4_5_hyp_positions", hyp_positions)
 puts "Hypothetical positions carrying the causal mutation #{hyp_positions}"
 FileRW.write_txt("#{output_folder}/hyp_positions", hyp_positions)
 
-# #Define SNPs in the r ordered array of fragments.
-dic_or_hm, snps_hm_or = Vcf.define_snps(perm_hm, var_num[:hom])
-dic_or_ht, snps_ht_or = Vcf.define_snps(perm_hm, var_num[:het])
-File.open("#{log_folder}/4_6_dic_or_hm.yml", "w") do |file|
-  file.write dic_or_hm.to_yaml
-end
-FileRW.write_txt("#{log_folder}/4_7_snps_hm_or", snps_hm_or)
-
-File.open("#{log_folder}/4_8_dic_or_ht.yml", "w") do |file|
-  file.write dic_or_ht.to_yaml
-end
-FileRW.write_txt("#{log_folder}/4_9_snps_ht_or", snps_ht_or)
-
 # ###[5]
 # thres = 0
 # pp thres
 # Calculate ratios in the contig permutation obtained from SDM
-dic_expected_ratios, expected_ratios, exp_ids_short, exp_inv_ratios = Ratio_filtering.selected_ratios(snps_hm_or, snps_ht_or, perm_hm, threshold, adjust)
-File.open("#{log_folder}/5_1_dic_expected_ratios.yml", "w") do |file|
-  file.write dic_expected_ratios.to_yaml
+expected_ratios = []
+perm_hm.each do | fragid |
+  expected_ratios << input_frags[fragid][:ratio]
 end
 FileRW.write_txt("#{log_folder}/5_2_expected_ratios", expected_ratios)
-FileRW.write_txt("#{log_folder}/5_3_exp_ids_short", exp_ids_short)
-File.open("#{log_folder}/5_4_exp_inv_ratios.yml", "w") do |file|
-  file.write exp_inv_ratios.to_yaml
-end
 
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
@@ -185,25 +167,15 @@ end
 FileRW.write_txt("#{log_folder}/t_06_snps_ht", snps_ht)
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-dic_ratios, ratios, ids_short, dic_ratios_inv  = Ratio_filtering.selected_ratios(snps_hm, snps_ht, ids_ok, threshold, adjust)
-File.open("#{log_folder}/t_07_dic_ratios.yml", "w") do |file|
-  file.write dic_ratios.to_yaml
-end
+ratios, original, dic_ratios_inv  = Ratio_filtering.selected_ratios(original, threshold)
 FileRW.write_txt("#{log_folder}/t_08_ratios", ratios)
-FileRW.write_txt("#{log_folder}/t_09_ids_short", ids_short)
 File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
   file.write dic_ratios_inv.to_yaml
 end
 
 
-s_hm, s_snps_hm = Vcf.define_snps(ids_short, var_num[:hom])
-File.open("#{log_folder}/t_11_s_hm.yml", "w") do |file|
-  file.write s_hm.to_yaml
-end
-FileRW.write_txt("#{log_folder}/t_12_s_snps_hm", s_snps_hm)
-
-hm_sh = Ratio_filtering.important_pos(ids_short, origin_pos[:hom])
-ht_sh = Ratio_filtering.important_pos(ids_short, origin_pos[:het])
+hm_sh = Ratio_filtering.important_pos(original.keys, origin_pos[:hom])
+ht_sh = Ratio_filtering.important_pos(original.keys, origin_pos[:het])
 
 FileRW.write_txt("#{output_folder}/hm_snps_short", hm_sh) # save the SNP distributions for the best permutation in the generation
 FileRW.write_txt("#{output_folder}/ht_snps_short", ht_sh)

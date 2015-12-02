@@ -1,5 +1,4 @@
 #encoding: utf-8
-require_relative 'stuff'
 require 'csv'
 
 class Ratio_filtering
@@ -10,6 +9,20 @@ class Ratio_filtering
       ratios << inhash[frag][:ratio]
     end
     ratios
+  end
+
+  def self.ratio_hash(inhash)
+    hash = {}
+    inhash.keys.each do | frag |
+      ratio = inhash[frag][:ratio]
+      if hash.key?(ratio)
+        hash[ratio] << frag
+      else
+        hash[ratio] = []
+        hash[ratio] << frag
+      end
+    end
+    hash
   end
 
   def self.selected_ratios(inhash, threshold)
@@ -25,7 +38,6 @@ class Ratio_filtering
           inhash.delete(frag)
         end
       end
-      ratios = get_ratios(inhash)
       sel_ids = inhash.keys
       contigs_discarded = initial - sel_ids.length
       puts "#{contigs_discarded} contigs out of #{initial} discarded"
@@ -34,15 +46,15 @@ class Ratio_filtering
       while sel_ids.length > 30*contigs_discarded do
         threshold = threshold + 2
         puts "threshold #{threshold}%"
-        dic_ratios, ratios, sel_ids, dic_ratios_inv  = Ratio_filtering.selected_ratios(inhash, threshold)
+        ratios, inhash, dic_ratios_inv = Ratio_filtering.selected_ratios(inhash, threshold)
         contigs_discarded = initial - sel_ids.length
       end
-      dic_ratios_inv = Stuff.safe_invert(dic_ratios)
+      ratios = get_ratios(inhash)
+      dic_ratios_inv = ratio_hash(inhash)
     else
-      sel_ids = inhash.keys
-      dic_ratios_inv = Stuff.safe_invert(dic_ratios)
+      dic_ratios_inv = ratio_hash(inhash)
     end
-    return ratios, sel_ids, inhash
+    return ratios, inhash, dic_ratios_inv
   end
 
 	def self.important_pos(ids_short, pos)

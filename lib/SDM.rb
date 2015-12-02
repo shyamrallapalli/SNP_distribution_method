@@ -27,19 +27,24 @@ class SDM
     #(1) If the number of contigs is even, half of the array goes to the left and half goes to the right part of the distribution
     #(2) If the number of contigs is odd, we define two situations:
     ##if there's only 1 contig, we randomly assign the right or left destination for it
-    ##if there are more than 1 contigs, we take the first contig in the array and randomly assign the right or left destination for it. The remaining array have a even number of elements, so we proceed as described in (1)
-    if contigs_at_min.length.to_i % 2 == 0  ## even contigs
+    ##if there are more than 1 contigs, we take the first contig in the array and randomly assign the right or left destination for it.
+    # The remaining array have a even number of elements, so we proceed as described in (1)
+    ## even number of contigs
+    if contigs_at_min.length.to_i % 2 == 0
       half = contigs_at_min.each_slice(contigs_at_min.length/2.to_i).to_a
       right << half[0]
       left << half[1]
+    ## odd number of contigs
     else
-      if contigs_at_min.length.to_i > 2    ## odd and more than 2 contigs
+      ## odd and more than 2 contigs
+      if contigs_at_min.length.to_i > 2
         object = contigs_at_min.shift
         other_half = contigs_at_min.each_slice(contigs_at_min.length/2.to_i).to_a
         right << other_half[0]
         left << other_half[1]
         right << object
-      else                                   ## just 1 contig
+      else
+        ## 1 contig, so choose randomly between left or right
         if dest == 0
           right << contigs_at_min
         elsif dest == 1
@@ -52,53 +57,62 @@ class SDM
 
 
   ##Input for sorting: inverted hash containing the normalised homozygous scores as key and the fragments' ids as value.
-  ##Output from sorting: perm is the permutation array containing the candidate order of contigs and mut is the array of candidate contigs taken from the central part of perm
+  ##Output from sorting: perm is the permutation array containing the candidate order of contigs
+  # and mut is the array of candidate contigs taken from the central part of perm
   def self.sorting(dic_hm_inv, cross, average_contig)
-    #warn "#{dic_hm_inv}\n"
-    #warn "#{cross}\n"
-    #warn "#{average_contig}\n"
     left, right = [], []
     keys= dic_hm_inv.keys.to_a
     (keys.length/2).times do #repeat the sorting process until the original hash is sorted.
       right, left, keys = SDM.divide_array(dic_hm_inv, right, left, keys, 0, cross)
       right, left, keys = SDM.divide_array(dic_hm_inv, right, left, keys, 1, cross)
     end
-    #warn "#{right}\n"
-    #warn "#{left}\n"
-    perm = right.flatten << left.compact.flatten.reverse #combine together both sides of the distribution
+    right.compact.flatten!
+    left.compact.flatten!
+
+    # check which of right or left are smaller array
+    smaller = []
+    if right.length <= left.length
+      smaller = right
+    else
+      smaller = left
+    end
+
+    perm = right + left.reverse # combine together both sides of the distribution
     perm.flatten!
     mut = []
     # pl = perm.length.to_i
     # r = pl/50
     if average_contig.to_i < 10000
-      if cross == "back" #In case of a back-cross, 20 contigs in the middle part of the permutation taken
-        if right.length > 10
-          mut << right.flatten[-10, 10]
-          mut << left.flatten[-10, 10].reverse
+      # In case of a back-cross, 20 contigs in the middle part of the permutation taken
+      if cross == "back"
+        if smaller.length > 10
+          mut << right[-10, 10]
+          mut << left[-10, 10].reverse
           mut.flatten!
         else
-          mut << right.flatten[-right.length, right.length]
-          mut << left.flatten[-left.length, left.length].reverse
+          mut << right[-right.length, right.length]
+          mut << left[-left.length, left.length].reverse
           mut.flatten!
         end
-      elsif cross == "out" #In case of a out-cross, 50 contigs in the middle part of the permutation taken
-        if right.length > 20
-          mut << right.flatten[-20, 20]
-          mut << left.flatten[-20, 20].reverse
+      # In case of a out-cross, 50 contigs in the middle part of the permutation taken
+      elsif cross == "out"
+        if smaller.length > 20
+          mut << right[-20, 20]
+          mut << left[-20, 20].reverse
           mut.flatten!
         else #If a strong filtering step reduces the total number of contigs to a number lower than 20, perm.length/2 contigs on the right and perm.length/2 on the left side of the middle point are taken.
-          mut << right.flatten[-right.length, right.length]
-          mut << left.flatten[-left.length, left.length].reverse
+          mut << right[-right.length, right.length]
+          mut << left[-left.length, left.length].reverse
           mut.flatten!
         end
       end
     else
-      num = right.flatten.length
+      num = smaller.length
       if num > 6
           num = 6
       end
-      mut << right.flatten[-num, num]
-      mut << left.flatten[-num, num].reverse
+      mut << right[-num, num]
+      mut << left[-num, num].reverse
       mut.flatten!
     end
     return perm, mut
