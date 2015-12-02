@@ -107,13 +107,8 @@ File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", "w") do |file|
   file.write dic_ratios_inv_shuf.to_yaml
 end
 
-# #Redefine the arrays of SNPs after discarding the contigs that fell below the threshold provided.
-# #We refered to them as the "important contigs" and the SNPs on those are the "important positions"
-shuf_short_ids = Ratio_filtering.important_ids(ids_short_shuf, ids)
-FileRW.write_txt("#{log_folder}/3_5_shuf_short_ids", shuf_short_ids)
-
 # #Calculate how many contigs were discarded
-shuf_hm, shu_snps_hm = Vcf.define_snps(shuf_short_ids, var_num[:hom])
+shuf_hm, shu_snps_hm = Vcf.define_snps(ids_short_shuf, var_num[:hom])
 File.open("#{log_folder}/3_6_shuf_hm.yml", "w") do |file|
   file.write shuf_hm.to_yaml
 end
