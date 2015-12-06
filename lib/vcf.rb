@@ -10,10 +10,10 @@ class Vcf
   def self.snps_in_vcf(vcf_file, ht_cutoff=0.5, hm_cutoff=1.0)
     # hash of :het and :hom with frag ids and respective variant positions
     var_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-    File.open(vcf_file, "r").each do |line|
+    File.open(vcf_file, 'r').each do |line|
       next if line =~ /^#/
       v = Bio::DB::Vcf.new(line)
-      allele_freq = v.info["AF"].to_f
+      allele_freq = v.info['AF'].to_f
       if allele_freq == ht_cutoff
         if var_pos[:het].has_key?(v.chrom)
           var_pos[:het][v.chrom] << v.pos
@@ -59,7 +59,7 @@ class Vcf
 	        dic_snps_num.store(frag, 0)
 	      end
 	  	}
-		dic_snps_num.each { |id, snp| snps << snp }
+		dic_snps_num.values.each { | snp | snps << snp }
 		return dic_snps_num, snps
 	end
 
@@ -179,7 +179,7 @@ class Vcf
   # input4: ratio adjustment factor
   # output: a hash of frag ids with all details and variant positions
   # are accumulated using length and order of fragments
-  def self.varpos_aggregate(frag_info, frag_len, frag_order, ratio_adjust, cumulate="yes")
+  def self.varpos_aggregate(frag_info, frag_len, frag_order, ratio_adjust, cumulate='yes')
     details = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     asmbly_len = 0
     frag_order.each { | frag |
@@ -203,7 +203,7 @@ class Vcf
         details[frag][:ratio] = details[frag][:hm]/details[frag][:ht]
       end
       details[frag][:len] = frag_len[frag].to_i
-      if cumulate == "yes"
+      if cumulate == 'yes'
         asmbly_len += frag_len[frag].to_i
       end
     }

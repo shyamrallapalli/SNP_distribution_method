@@ -6,12 +6,12 @@ require 'rinruby'
 class Plot
   def self.qqplot(hypothetical, location, title, ylabel, xlabel, nametag)
     myr = RinRuby.new(:echo=>false)
-    myr.assign "hypothetical", hypothetical
+    myr.assign 'hypothetical', hypothetical
     myr.assign 'title', title
     myr.assign 'xlabel', xlabel
     myr.assign 'ylabel', ylabel
-    myr.assign "location", location
-    myr.assign "nametag", nametag
+    myr.assign 'location', location
+    myr.assign 'nametag', nametag
     myr.eval 'png(paste(location, "/", nametag, "_qqplot_exp_hyp", ".png", sep=""), width=500, height=500)
     qqline2 <- function(x, y, probs = c(0.25, 0.75), qtype = 7, ...)
       {
