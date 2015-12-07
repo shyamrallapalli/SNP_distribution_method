@@ -18,7 +18,7 @@ class TestVCF < Test::Unit::TestCase
 	end
 
   def test_snps_in_vcf
-    snp_data, hm, ht = Stuff.snps_in_vcf(@vcf_file)
+    snp_data, hm, ht = FileRW.snps_in_vcf(@vcf_file)
     assert_equal(["frag1", "frag1"], hm)
     assert_equal(["frag2", "frag3"], ht)
     assert_equal([["frag1", "frag1", "frag2", "frag3"], [7, 8, 2, 2], {"frag1" =>2, "frag2" =>1, "frag3" =>1}, [{"AF"=>"1.0"},{"AF"=>"1.0"},{"AF"=>"0.5"},{"AF"=>"0.5"}]], snp_data)
@@ -29,8 +29,8 @@ class TestVCF < Test::Unit::TestCase
     ht = ["frag1", "frag1", "frag2", "frag4"]
     pos1 = [12, 13, 14, 45]
     pos2 = [1, 4, 25, 40]
-    dic_pos_hm = Stuff.dic_id_pos(hm, pos1)
-    dic_pos_ht = Stuff.dic_id_pos(ht, pos2)
+    dic_pos_hm = FileRW.dic_id_pos(hm, pos1)
+    dic_pos_ht = FileRW.dic_id_pos(ht, pos2)
     assert_kind_of(Hash, dic_pos_hm)
     assert_kind_of(Hash, dic_pos_ht)
     assert_equal(dic_pos_hm, {"frag1"=>[12, 13, 14], "frag4"=>[45]})
@@ -40,7 +40,7 @@ class TestVCF < Test::Unit::TestCase
   def test_define_snps
     ids = ["frag1", "frag3", "frag2"]
     dic1 = {"frag1"=>"2"}
-    shu_dic1, snps_1  = Stuff.define_snps(ids, dic1)
+    shu_dic1, snps_1  = FileRW.define_snps(ids, dic1)
     assert_kind_of(Hash, shu_dic1)
     assert_kind_of(Array, snps_1)
     assert_kind_of(Float, snps_1[0])
@@ -53,7 +53,7 @@ class TestVCF < Test::Unit::TestCase
     snp_list = [15, 18, 20, 25]
     assert_kind_of(Hash, dic)
     assert_kind_of(Array, snp_list)
-    dic = Stuff.positions_by_fragment(dic, snp_list)
+    dic = FileRW.positions_by_fragment(dic, snp_list)
     assert_equal(dic, {"frag1" =>[15], "frag2"=>[18], "frag3"=>[20, 25]})
   end
 

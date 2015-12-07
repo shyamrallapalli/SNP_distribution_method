@@ -5,7 +5,6 @@ require_relative 'lib/file_rw'
 require_relative 'lib/mutation'
 require_relative 'lib/ratio_filtering'
 require_relative 'lib/SDM'
-require_relative 'lib/stuff'
 require_relative 'lib/vcf'
 
 require 'pp'
@@ -15,7 +14,7 @@ require 'yaml'
 require 'fileutils'
 
 if ARGV.empty?
-  puts "  Please specify a dataset directory,\n\
+  puts "  Please specify a data set directory,\n\
   and place in it a \"input_pars.yml\" file with\n\
   following details\n\
   (1) name of input sequences (fasta) and variant (vcf) files\n\
@@ -97,7 +96,7 @@ FileRW.write_txt("#{log_folder}/3_7_shu_snps_hm", shu_snps_hm)
 
 # ###[4] SDM
 # invert hash with ratios as keys and fragments as values
-dic_shuf_hm_norm = Stuff.safe_invert(shuf_hm)
+dic_shuf_hm_norm = FileRW.safe_invert(shuf_hm)
 File.open("#{log_folder}/4_1_dic_shuf_hm_norm.yml", "w") do |file|
   file.write dic_shuf_hm_norm.to_yaml
 end
@@ -105,7 +104,7 @@ end
 # #Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
 # with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
 # to reconstruct the right side of the distribution, and left, for the left side)
-perm_hm, perm_ratio, mut, hyp_positions = SDM.calling_SDM(dic_shuf_hm_norm, dic_ratios_inv_shuf, var_pos[:hom], cross, average_contig)
+perm_hm, perm_ratio, mut, hyp_positions = SDM.arrange(dic_shuf_hm_norm, dic_ratios_inv_shuf, var_pos[:hom], cross, average_contig)
 FileRW.write_txt("#{log_folder}/4_2_perm_hm", perm_hm)
 FileRW.write_txt("#{log_folder}/4_3_perm_ratio", perm_ratio)
 FileRW.write_txt("#{log_folder}/4_4_mut", mut)
