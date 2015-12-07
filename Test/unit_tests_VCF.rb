@@ -14,7 +14,7 @@ class TestVCF < Test::Unit::TestCase
 		"1\t123\t.\tG\tA\t.\tPASS\tADP=25;WT=0;HET=1;HOM=0;NC=0\tGT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR\t0/1:39:25:25:14:11:44%:1.1933E-4:69:66:6:8:6:5\n"]
     @vcf_file = "test/test.vcf"
     @fasta_file = "test/test.fasta"
-    @f_array = FastaHandle.fasta_array("test/test.fasta")
+    @f_array = FastaHandle.array("test/test.fasta")
 	end
 
   def test_snps_in_vcf

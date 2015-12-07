@@ -8,7 +8,7 @@ class TestFileRW < Test::Unit::TestCase
     @file = 'test/ratio_values.txt'
     @vcf_file = 'test/test.vcf'
     @fasta_file = 'test/test.fasta'
-    @f_array = FastaHandle.fasta_array('test/test.fasta')
+    @f_array = FastaHandle.array('test/test.fasta')
   end
 
   def test_to_array

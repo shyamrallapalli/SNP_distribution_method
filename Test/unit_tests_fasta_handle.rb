@@ -6,7 +6,7 @@ class TestSuff < Test::Unit::TestCase
 	def setup
 		@vcf_file = "test/test.vcf"
 		@fasta_file = "test/test.fasta"
-		@f_array = FastaHandle.fasta_array("test/test.fasta")
+		@f_array = FastaHandle.array("test/test.fasta")
 	end
 
 	def test_fasta_id_n_lengths
@@ -18,7 +18,7 @@ class TestSuff < Test::Unit::TestCase
 	end
 
   def test_fasta_array
-    fasta_array = FastaHandle.fasta_array('test/test.fasta')
+    fasta_array = FastaHandle.array('test/test.fasta')
     assert_equal('frag1', fasta_array[0].entry_id)
     assert_equal('AAAAAAAA', fasta_array[1].seq)
     assert_equal(8, fasta_array[2].length)
@@ -31,7 +31,7 @@ class TestSuff < Test::Unit::TestCase
 
   def test_create_perm_fasta
     perm = []
-    @fasta_array = FastaHandle.fasta_array("test/test2.fasta")
+    @fasta_array = FastaHandle.array("test/test2.fasta")
     ids, lengths = FastaHandle.fasta_id_n_lengths(@fasta_array)
     perm = ["frag1", "frag3", "frag2"]
     fasta_perm = FastaHandle.create_perm_fasta(perm, @fasta_array, ids)

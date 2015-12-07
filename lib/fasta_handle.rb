@@ -19,7 +19,7 @@ class FastaHandle
 
   # Input: FASTA file
   # Output: Array of Bio::FastaFormat entries
-  def self.fasta_array(fasta_file)
+  def self.array(fasta_file)
     fasta = [] # we have the lengths of each fasta, but the frags are different to those of the vcf/hash(this only has the frags w snps)
     Bio::FastaFormat.open(fasta_file).each do |i| # get array of fasta format frags, ##  WE NEED TO REORDER THE FASTA FRAGS HERE, TO TEST DIFFERENT ARRANGEMENTS
       fasta << i
@@ -31,7 +31,7 @@ class FastaHandle
   # Output: Integer of the length of the genome
   def self.genome_length(fasta_file)
     lengths = []
-    fasta_array(fasta_file).each do |frag|
+    FastaHandle.array(fasta_file).each do |frag|
       lengths << frag.length
     end
     return lengths.inject(:+)

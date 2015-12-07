@@ -1,10 +1,9 @@
 #encoding: utf-8
-require_relative 'snp_dist'
-require_relative 'reform_ratio'
-require_relative 'plot'
 require_relative 'file_rw'
+require_relative 'plot'
+require_relative 'snp_dist'
+require 'rinruby'
 require 'simple_stats'
-require 'pp'
 
 class Mutation
 
