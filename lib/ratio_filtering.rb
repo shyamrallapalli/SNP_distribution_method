@@ -3,9 +3,9 @@ require 'csv'
 
 class Ratio_filtering
 
-  def self.get_ratios(inhash)
+  def self.get_ratios(inhash, frags)
     ratios = []
-    inhash.keys.each do | frag |
+    frags.each do | frag |
       ratios << inhash[frag][:ratio]
     end
     ratios
@@ -27,34 +27,33 @@ class Ratio_filtering
 
   def self.selected_ratios(inhash, threshold)
     initial = inhash.keys.length
-    ratios = get_ratios(inhash)
+    ratios = get_ratios(inhash, inhash.keys)
 
     if threshold > 0
       thres = 100.0/threshold.to_f
       filter = (ratios.max.to_f)/thres
-      # delete fragment information below selected threshold
-      inhash.keys.each do | frag |
-        if inhash[frag][:ratio] <= filter
-          inhash.delete(frag)
-        end
-      end
+      # go through selection if the threshold of discarded fragments is low
       sel_ids = inhash.keys
       contigs_discarded = initial - sel_ids.length
-      puts "#{contigs_discarded} contigs out of #{initial} discarded"
-
-      # go through selection if the threshold of discarded fragments is low
-      while sel_ids.length > 30*contigs_discarded do
-        threshold = threshold + 2
+      while sel_ids.length > 30 * contigs_discarded do
         puts "threshold #{threshold}%"
-        ratios, inhash, dic_ratios_inv = Ratio_filtering.selected_ratios(inhash, threshold)
+        # delete fragment information below selected threshold
+        inhash.keys.each do | frag |
+          if inhash[frag][:ratio] <= filter
+            inhash.delete(frag)
+          end
+        end
+        sel_ids = inhash.keys
         contigs_discarded = initial - sel_ids.length
+        puts "#{contigs_discarded} contigs out of #{initial} discarded"
+        # increase threshold in steps of 2% until while condition is reached
+        threshold = threshold + 2
       end
-      ratios = get_ratios(inhash)
-      dic_ratios_inv = ratio_hash(inhash)
+      ratios_hash = ratio_hash(inhash)
     else
-      dic_ratios_inv = ratio_hash(inhash)
+      ratios_hash = ratio_hash(inhash)
     end
-    return ratios, inhash, dic_ratios_inv
+    return inhash, ratios_hash
   end
 
 	def self.important_pos(ids_short, pos)

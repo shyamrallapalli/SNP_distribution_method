@@ -81,10 +81,9 @@ end
 
 # ###[3]
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
-ratios_shuf, input_frags, dic_ratios_inv_shuf = Ratio_filtering.selected_ratios(input_frags, threshold)
-FileRW.write_txt("#{log_folder}/3_2_ratios_shuf", ratios_shuf)
+input_frags, ratios_hash = Ratio_filtering.selected_ratios(input_frags, threshold)
 File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", "w") do |file|
-  file.write dic_ratios_inv_shuf.to_yaml
+  file.write ratios_hash.to_yaml
 end
 
 
@@ -92,32 +91,27 @@ end
 # #Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
 # with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
 # to reconstruct the right side of the distribution, and left, for the left side)
-perm_ratio, mut, hyp_positions = SDM.arrange(dic_ratios_inv_shuf, var_pos[:hom], cross, average_contig)
-FileRW.write_txt("#{log_folder}/4_3_perm_ratio", perm_ratio)
-FileRW.write_txt("#{log_folder}/4_4_mut", mut)
+sdm_frags, mut_frags, hyp_positions = SDM.arrange(ratios_hash, var_pos[:hom], cross, average_contig)
+FileRW.write_txt("#{log_folder}/4_3_perm_ratio", sdm_frags)
+FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 FileRW.write_txt("#{log_folder}/4_5_hyp_positions", hyp_positions)
 
 puts "Hypothetical positions carrying the causal mutation #{hyp_positions}"
 FileRW.write_txt("#{output_folder}/hyp_positions", hyp_positions)
 
 # ###[5]
-# thres = 0
-# pp thres
 # Calculate ratios in the contig permutation obtained from SDM
-expected_ratios = []
-perm_ratio.each do | fragid |
-  expected_ratios << input_frags[fragid][:ratio]
-end
-FileRW.write_txt("#{log_folder}/5_2_expected_ratios", expected_ratios)
+sdm_ratios = Ratio_filtering.get_ratios(input_frags, sdm_frags)
+FileRW.write_txt("#{log_folder}/5_2_expected_ratios", sdm_ratios)
 
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
-fasta_perm = FastaHandle.create_perm_fasta(perm_ratio, inseq[:seq])
+arranged_frags = FastaHandle.create_perm_fasta(sdm_frags, inseq[:seq])
 File.open("ordered_frags_thres#{threshold}.fasta", 'w+') do |f|
-  fasta_perm.each { |element| f.puts(element) }
+  arranged_frags.each { |element| f.puts(element) }
 end
 
-region = average_contig * (perm_ratio.length)
+region = average_contig * (sdm_frags.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
 puts '______________________'
 
@@ -142,14 +136,15 @@ end
 
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-ratios, original, dic_ratios_inv  = Ratio_filtering.selected_ratios(original, threshold)
+original, dic_ratios_inv  = Ratio_filtering.selected_ratios(original, threshold)
+ratios = Ratio_filtering.get_ratios(original, original.keys)
 FileRW.write_txt("#{log_folder}/t_08_ratios", ratios)
 File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
   file.write dic_ratios_inv.to_yaml
 end
 
 
-outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], perm_ratio, adjust)
+outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], sdm_frags, adjust)
 File.open("#{log_folder}/t_13_original.yml", "w") do |file|
   file.write original.to_yaml
 end
@@ -181,4 +176,4 @@ FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
 
 # #Plot expected vs SDM ratios, QQplots
 
-Mutation.density_plots(average_contig.to_f, ratios, expected_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut, var_pos[:hom], original, outcome)
+Mutation.density_plots(average_contig.to_f, ratios, sdm_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut_frags, var_pos[:hom], original, outcome)
