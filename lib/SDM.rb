@@ -105,19 +105,15 @@ class SDM
   ###Output from calling: contig permutation based on homozygous SNP, contig permutation based on ratios, array of candidate contigs taken from the central part of both permutations (mut) and
   #candidate positions for causal mutations  (hyp) - this is used to prove the efficiency of SDM as we know the correct order and the position of the mutation,
   #in a real experiment this will not be known -
-  def self.arrange (dic_hm_inv, dic_ratios_inv, dic_pos_hm, cross, average_contig)
-    # sorting step based on homozygous SNP density
-    perm_hm, mut  = SDM.sort(dic_hm_inv, cross, average_contig)
-    # repeat the sorting step based on the ratios
+  def self.arrange (dic_ratios_inv, dic_pos_hm, cross, average_contig)
+
+    # sorting step based on homozygous to heterozygous on ratios
     perm_ratio, mut_ratio = SDM.sort(dic_ratios_inv, cross, average_contig)
-    # merge together both candidate contig arrays into one, and remove duplications.
-    mut += mut_ratio
-    mut.uniq!
 
     #***Testing step***
     # identify the SNP positions in the candidate contigs contained in mut
     or_pos = {}
-    mut.each { |frag|
+    mut_ratio.each { |frag|
       if dic_pos_hm.has_key?(frag)
         or_pos.store(frag, dic_pos_hm[frag])
       end
@@ -129,7 +125,7 @@ class SDM
     # end
     # or_pos.delete_if { |id, array|  array.length < (number_of_snps.max - 1) }
     hyp = or_pos.values.sort.flatten!
-    return perm_hm, perm_ratio, mut, hyp
+    return perm_ratio, mut_ratio, hyp
   end
 
 end

@@ -74,7 +74,7 @@ inseq, genome_length = FastaHandle.fasta_parse(fasta_shuffle)
 ids = inseq[:len].keys
 average_contig = genome_length / ids.length
 
-input_frags = Vcf.varpos_aggregate(var_pos, inseq[:len], ids, adjust, "no")
+input_frags = Vcf.varpos_aggregate(var_pos, inseq[:len], ids, adjust, 'no')
 File.open("#{log_folder}/t_17_input_frags.yml", "w") do |file|
   file.write input_frags.to_yaml
 end
@@ -87,25 +87,12 @@ File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", "w") do |file|
   file.write dic_ratios_inv_shuf.to_yaml
 end
 
-# #Calculate how many contigs were discarded
-shuf_hm, shu_snps_hm = Vcf.define_snps(input_frags.keys, var_num[:hom])
-File.open("#{log_folder}/3_6_shuf_hm.yml", "w") do |file|
-  file.write shuf_hm.to_yaml
-end
-FileRW.write_txt("#{log_folder}/3_7_shu_snps_hm", shu_snps_hm)
 
 # ###[4] SDM
-# invert hash with ratios as keys and fragments as values
-dic_shuf_hm_norm = FileRW.safe_invert(shuf_hm)
-File.open("#{log_folder}/4_1_dic_shuf_hm_norm.yml", "w") do |file|
-  file.write dic_shuf_hm_norm.to_yaml
-end
-
 # #Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
 # with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
 # to reconstruct the right side of the distribution, and left, for the left side)
-perm_hm, perm_ratio, mut, hyp_positions = SDM.arrange(dic_shuf_hm_norm, dic_ratios_inv_shuf, var_pos[:hom], cross, average_contig)
-FileRW.write_txt("#{log_folder}/4_2_perm_hm", perm_hm)
+perm_ratio, mut, hyp_positions = SDM.arrange(dic_ratios_inv_shuf, var_pos[:hom], cross, average_contig)
 FileRW.write_txt("#{log_folder}/4_3_perm_ratio", perm_ratio)
 FileRW.write_txt("#{log_folder}/4_4_mut", mut)
 FileRW.write_txt("#{log_folder}/4_5_hyp_positions", hyp_positions)
@@ -118,19 +105,19 @@ FileRW.write_txt("#{output_folder}/hyp_positions", hyp_positions)
 # pp thres
 # Calculate ratios in the contig permutation obtained from SDM
 expected_ratios = []
-perm_hm.each do | fragid |
+perm_ratio.each do | fragid |
   expected_ratios << input_frags[fragid][:ratio]
 end
 FileRW.write_txt("#{log_folder}/5_2_expected_ratios", expected_ratios)
 
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
-fasta_perm = FastaHandle.create_perm_fasta(perm_hm, inseq[:seq])
+fasta_perm = FastaHandle.create_perm_fasta(perm_ratio, inseq[:seq])
 File.open("ordered_frags_thres#{threshold}.fasta", 'w+') do |f|
   fasta_perm.each { |element| f.puts(element) }
 end
 
-region = average_contig * (perm_hm.length)
+region = average_contig * (perm_ratio.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
 puts '______________________'
 
@@ -162,7 +149,7 @@ File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
 end
 
 
-outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], perm_hm, adjust)
+outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], perm_ratio, adjust)
 File.open("#{log_folder}/t_13_original.yml", "w") do |file|
   file.write original.to_yaml
 end
