@@ -45,39 +45,6 @@ class Mutation
 		return causal, candidate, percent
 	end
 
-	def self.test_genomes_distribution_plot(genome_length, ratios, expected_ratios, dataset, perm)
-		hm, ht, hyp, ylim_hm, ylim_ht, ylim_hyp = [],[],[],[],[],[]
-		Dir.chdir(File.join(Dir.home, "SNP_distribution_method/Small_genomes/#{perm}")) do
-			hom_snps = FileRW.to_array_int("hm_snps_short.txt")
-			hm << hom_snps
-			ylim_hm << Plot.get_ylim(hom_snps, genome_length)
-
-			het_snps = FileRW.to_array_int("ht_snps_short.txt")
-			ht << het_snps
-			ylim_ht << Plot.get_ylim(het_snps, genome_length)
-
-			hyp_snps = SNPdist.hyp_snps(expected_ratios, genome_length)
-			hyp << hyp_snps
-			ylim_hyp << Plot.get_ylim(hyp_snps, genome_length)
-		end
-
-		Dir.chdir(File.join(Dir.home, "SNP_distribution_method/Small_genomes/#{perm}")) do
-
-			perm_hm = FileRW.to_array_int("perm_hm.txt")
-			Plot.plot_snps(perm_hm, hm[0], "SNP_distribution_method/Small_genomes", "#{perm}", 1, genome_length, 'hm',
-				'Homozygous SNP density', ylim_hm[0])
-
-			perm_ht = FileRW.to_array_int("perm_ht.txt")
-			Plot.plot_snps(perm_ht, ht[0], "SNP_distribution_method/Small_genomes", "#{perm}", 1, genome_length, 'ht',
-				'Heterozygous SNP density', ylim_ht[0])
-
-			perm_hyp = SNPdist.hyp_snps(ratios, genome_length)
-			Plot.plot_snps(perm_hyp, hyp[0], "SNP_distribution_method/Small_genomes", "#{perm}", 1, genome_length, 'hyp',
-				'Approximated ratio of homozygous to heterozygous SNP density', ylim_hyp[0])
-		end
-	end
-
-
 	def self.candidate(mut, frag_pos_hm)
 		candidate_mutations ={}
 		mut.each do |frag|
