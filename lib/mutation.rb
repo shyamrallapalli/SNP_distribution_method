@@ -1,63 +1,57 @@
 #encoding: utf-8
 require_relative 'file_rw'
 require_relative 'plot'
-require_relative 'snp_dist'
 require 'rinruby'
 require 'simple_stats'
 
 class Mutation
 
-  # Input 0: List of SNP positions
-  # Input 1: The number of equally spaced points at which the density is to be estimated. Specify n as a power of two.
-  # Output: The highest kernel density value for this SNP distribution
-  def self.find_peak(snps, n)
+  # Input 0: The average contig length
+  # Input 1: Array of homozygous (hm) or heterozygous (hm) or ratio (hm/ht) of SNPs per each contig.
+  # Output: A list of positions which represents the density of hm or ht or hm/ht ratios
+  def self.putative_density(mean_contig_len, ratios)
+    positions = []
+    ratios.length.times do | i |
+      multiple = i + 1
+      positions << [mean_contig_len * multiple] * (ratios[i] * 10).to_i
+    end
+    positions.flatten!
+  end
+
+  # Input 0: List ratios from sdm
+  # Input 1: List of homozygous SNP positions
+  # Input 2: The number of equally spaced points at which the density is to be estimated. Specify n as a power of two.
+  # Output: get the highest kernel density value and returns closest homozygous SNP to the peak
+  def self.closest_snp(ratios, hm, n)
     myr = RinRuby.new(:echo=>false)
     myr.n = n
-    myr.snps = snps
-    myr.eval 'kernel_density <- density(snps, n=n)'
-    myr.eval 'index <- match(max(kernel_density$y),kernel_density$y)' # this only finds the first index with the max density if there is > 1
+    myr.ratios = ratios
+    myr.eval 'kernel_density <- density(ratios, n=n)'
+    # this only finds the first index with the max density if there is > 1
+    myr.eval 'index <- match(max(kernel_density$y),kernel_density$y)'
     myr.eval 'peak <- kernel_density$x[index]'
     peak = myr.pull 'peak'
     myr.quit
     peak.to_i
-  end
-
-  # Input 0: Value under distribution peak (genome position as a float)
-  # Input 1: List of homozygous SNP positions
-  # Output: The closest homozygous SNP to the peak
-  def self.closest_snp(peak, hm)
     hm.min { |a, b| (peak - a).abs <=> (peak - b).abs }
   end
 
-	def self.test_genomes_define(hm, ht, perm_hm, perm_ht, genome_length, ratios, expected_ratios)
-		hm.pop
-		# div = 100
-		n = 2000
-		hyp = SNPdist.hyp_snps(ratios, genome_length)
-		peak =  find_peak(hyp, n) # Find the peak in the approximated (hypothetical SNP) distribution
-		causal = closest_snp(peak, hm)
-		perm_hyp = SNPdist.hyp_snps(expected_ratios, genome_length)
+  # selected frags with likelyhood of carrying mutation
+  # hash of fragments with variant positions
+  # returns hash of 
+  def self.get_candidates(frags, var_pos_hm)
+    candidate_frags = {}
+    frags.each do |frag|
+      if var_pos_hm.has_key?(frag)
+        candidate_frags[frag] = var_pos_hm[frag]
+      end
+    end
+    candidate_frags
+  end
 
-		perm_peak = find_peak(perm_hyp, n)
-		candidate = closest_snp(perm_peak, perm_hm)
-		normalised = (candidate - causal).abs
-		percent = (normalised*100)/genome_length.to_f
-		return causal, candidate, percent
-	end
-
-	def self.candidate(mut, frag_pos_hm)
-		candidate_mutations ={}
-		mut.each do |frag|
-			if frag_pos_hm.has_key?(frag)
-				candidate_mutations.store(frag, frag_pos_hm[frag])
-			end
-		end
-		return candidate_mutations
-	end
-
-  def self.adjusted_positions(candidate_mutations, original, outcome)
+  def self.adjusted_positions(candidate_frags, original, outcome)
     original_pos, outcome_pos = [], []
-    candidate_mutations.each_key { |frag|
+    candidate_frags.each_key { |frag|
       original_pos << original[frag][:hm_pos] if original.key?(frag)
       outcome_pos << outcome[frag][:hm_pos] if outcome.key?(frag)
     }
@@ -71,30 +65,40 @@ class Mutation
     [original_pos, outcome_pos]
   end
 
-  def self.density_plots(contig_size, ratios, expected_ratios, snps_hm, snps_ht, region, genome_len, file, mut, frag_pos_hm, original, outcome)
-		n = 1048576*4
-		average_positions = SNPdist.general_positions(contig_size, ratios)
-		hyp_ratios = SNPdist.densities_pos(expected_ratios, average_positions)
-		real_ratios = SNPdist.densities_pos(ratios, average_positions)
+  def self.density_plots(outcome, mut_frags, frag_pos_hm, mean_contig_len, genome_len, dir, original, logdir)
+    n = 1048576*4
+    # create arrays with the  SNP positions in the new ordered file.
+    snps_hm, snps_ht = Vcf.varpositions(outcome)
+    FileRW.write_txt("#{dir}/perm_hm", snps_hm)
+    FileRW.write_txt("#{dir}/perm_ht", snps_ht)
 
-  	# Find the peak in the approximated (hypothetical SNP) distribution
-    peak =  find_peak(hyp_ratios, n)
-		ylim = Plot.get_ylim(hyp_ratios, region)
-		candidate_peak = closest_snp(peak, snps_hm)
-		candidate_mutations = Mutation.candidate(mut, frag_pos_hm)
-    original_pos, outcome_pos = Mutation.adjusted_positions(candidate_mutations, original, outcome)
-		Plot.densities(snps_hm, snps_ht, hyp_ratios, region, file)
-		Plot.comparison(real_ratios, hyp_ratios, genome_len, file, ylim, original_pos, outcome_pos)
-		Plot.qqplot(snps_hm, file, "QQplot for hm density", "Theoretical normal distribution", "Hypothetical SNP density", "hm_snps")
-		Plot.qqplot(hyp_ratios, file, "QQplot for the ratios", "Theoretical normal distribution", "Hypothetical ratios", "ratios")
+    # generate experimental densities from ratios of the outcome order
+    region = mean_contig_len * outcome.keys.length
+    outcome_ratios = Ratio_filtering.get_ratios(outcome)
+    FileRW.write_txt("#{logdir}/5_2_expected_ratios", outcome_ratios)
+    exp_order_density = putative_density(mean_contig_len, outcome_ratios)
+
+    # Find the peak in the approximated (hypothetical SNP) distribution
+    candidate_snp = closest_snp(exp_order_density, snps_hm, n)
+    candidate_frags = get_candidates(mut_frags, frag_pos_hm)
+    original_pos, outcome_pos = Mutation.adjusted_positions(candidate_frags, original, outcome)
+
+    original_ratios = Ratio_filtering.get_ratios(original)
+    FileRW.write_txt("#{logdir}/t_08_ratios", original_ratios)
+    real_order_density = putative_density(mean_contig_len, original_ratios)
+    ylim = Plot.get_ylim(exp_order_density, region)
+    Plot.densities(snps_hm, snps_ht, exp_order_density, region, dir)
+    Plot.comparison(real_order_density, exp_order_density, genome_len, dir, ylim, original_pos, outcome_pos)
+    Plot.qqplot(snps_hm, dir, 'QQplot for hm density', 'Theoretical normal distribution', 'Hypothetical SNP density', 'hm_snps')
+    Plot.qqplot(exp_order_density, dir, 'QQplot for the ratios', 'Theoretical normal distribution', 'Hypothetical ratios', 'ratios')
 
     # write the candidate mutation and related ratio information to files
-    FileRW.write_txt("#{file}/hyp_ratios", hyp_ratios)
-    FileRW.write_txt("#{file}/ratios", real_ratios)
-    File.open("#{file}/mutation.txt", "w+") do |f|
+    FileRW.write_txt("#{dir}/hyp_ratios", exp_order_density)
+    FileRW.write_txt("#{dir}/ratios", real_order_density)
+    File.open("#{dir}/mutation.txt", 'w+') do |f|
       f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
-      f.puts "The mutation is likely to be found on the following contigs #{candidate_mutations}"
-      f.puts "Likeliest candidate responsible for mutation from the mutations is at #{candidate_peak}"
+      f.puts "The mutation is likely to be found on the following contigs #{candidate_frags}"
+      f.puts "Likeliest candidate responsible for mutation from the mutations is at #{candidate_snp}"
     end
   end
 

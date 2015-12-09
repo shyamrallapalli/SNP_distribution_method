@@ -3,9 +3,9 @@ require 'csv'
 
 class Ratio_filtering
 
-  def self.get_ratios(inhash, frags)
+  def self.get_ratios(inhash)
     ratios = []
-    frags.each do | frag |
+    inhash.each_key do | frag |
       ratios << inhash[frag][:ratio]
     end
     ratios
@@ -27,7 +27,7 @@ class Ratio_filtering
 
   def self.selected_ratios(inhash, threshold)
     initial = inhash.keys.length
-    ratios = get_ratios(inhash, inhash.keys)
+    ratios = get_ratios(inhash)
 
     if threshold > 0
       thres = 100.0/threshold.to_f
@@ -56,15 +56,15 @@ class Ratio_filtering
     return inhash, ratios_hash
   end
 
-	def self.important_pos(ids_short, pos)
-		pos.keys.each do |frag |
-			unless ids_short.include?(frag)
+  def self.important_pos(ids_short, pos)
+    pos.keys.each do |frag |
+      unless ids_short.include?(frag)
         pos.delete(frag)
       end
-		end
-		sh = pos.values
-		sh.flatten!
-		return sh
-	end
+    end
+    sh = pos.values
+    sh.flatten!
+    return sh
+  end
 
 end

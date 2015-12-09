@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 gem 'rake'
-gem 'pdist'
 gem 'bio'
 gem 'bio-samtools'
 gem 'rinruby'
+gem 'simple_stats'

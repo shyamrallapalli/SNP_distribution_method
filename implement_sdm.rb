@@ -29,7 +29,7 @@ FileUtils.cd("#{loc}")
 #### Inputs
 ### sequences and variants from the shuffled genome
 # filter parameter are to be read from a "input_pars.yml" file in the current folder
-pars = YAML.load_file("./input_pars.yml")
+pars = YAML.load_file('./input_pars.yml')
 fasta_shuffle = pars['fasta']
 vcf_file = pars['vcf']
 adjust = pars['ratio_adj'].to_f
@@ -98,11 +98,6 @@ FileRW.write_txt("#{log_folder}/4_5_hyp_positions", hyp_positions)
 puts "Hypothetical positions carrying the causal mutation #{hyp_positions}"
 FileRW.write_txt("#{output_folder}/hyp_positions", hyp_positions)
 
-# ###[5]
-# Calculate ratios in the contig permutation obtained from SDM
-sdm_ratios = Ratio_filtering.get_ratios(input_frags, sdm_frags)
-FileRW.write_txt("#{log_folder}/5_2_expected_ratios", sdm_ratios)
-
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
 filename = "ordered_frags_thres#{threshold}.fasta"
@@ -134,8 +129,6 @@ end
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
 original, dic_ratios_inv  = Ratio_filtering.selected_ratios(original, threshold)
-ratios = Ratio_filtering.get_ratios(original, original.keys)
-FileRW.write_txt("#{log_folder}/t_08_ratios", ratios)
 File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
   file.write dic_ratios_inv.to_yaml
 end
@@ -163,14 +156,9 @@ outcome.each_key { |key|
   out_outcome.puts "#{key}\t#{hash[:hm]}\t#{hash[:ht]}\t#{hash[:ratio]}\t#{hash[:len]}\t#{hash[:hm_pos].join(" ")}\t#{hash[:ht_pos].join(" ")}\n"
 }
 
-# #Create arrays with the  SNP positions in the new ordered file.
-hom_snps, het_snps = Vcf.varpositions(outcome)
-
-FileRW.write_txt("#{output_folder}/perm_hm", hom_snps)
-FileRW.write_txt("#{output_folder}/perm_ht", het_snps)
-
 # ###[6] Plots
 
 # #Plot expected vs SDM ratios, QQplots
 
-Mutation.density_plots(average_contig.to_f, ratios, sdm_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut_frags, var_pos[:hom], original, outcome)
+Mutation.density_plots(outcome, mut_frags, var_pos[:hom], average_contig.to_f, genome_length, output_folder,  original, log_folder)
+#    average_contig.to_f, ratios, sdm_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut_frags, var_pos[:hom], original, outcome)
