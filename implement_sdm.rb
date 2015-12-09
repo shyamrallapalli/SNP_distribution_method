@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-require_relative 'lib/fasta_handle'
 require_relative 'lib/file_rw'
 require_relative 'lib/mutation'
 require_relative 'lib/ratio_filtering'
