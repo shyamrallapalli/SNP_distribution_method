@@ -70,7 +70,7 @@ end
 
 # ###[2] Open FASTA files containing the unordered contigs
 # #Create a hash with shuffled fragments seq ids - values are lengths and sequences
-inseq, genome_length = FastaHandle.file_parse(fasta_shuffle)
+inseq, genome_length = FileRW.fasta_parse(fasta_shuffle)
 ids = inseq[:len].keys
 average_contig = genome_length / ids.length
 
@@ -107,7 +107,7 @@ FileRW.write_txt("#{log_folder}/5_2_expected_ratios", sdm_ratios)
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
 filename = "ordered_frags_thres#{threshold}.fasta"
-FastaHandle.write_order(sdm_frags, inseq[:seq], filename)
+FileRW.write_order(sdm_frags, inseq[:seq], filename)
 
 region = average_contig * (sdm_frags.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
@@ -118,7 +118,7 @@ puts '______________________'
 # #Open FASTA files containing the ordered contigs
 # #from the array take ids and lengths
 fasta_file = "frags.fasta"
-inseq_ok, genome_length = FastaHandle.file_parse(fasta_file)
+inseq_ok, genome_length = FileRW.fasta_parse(fasta_file)
 ids_ok = inseq_ok[:len].keys
 
 original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)

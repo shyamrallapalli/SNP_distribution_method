@@ -1,4 +1,5 @@
 # encoding: utf-8
+require 'bio'
 
 class FileRW
 
@@ -48,14 +49,41 @@ class FileRW
     exit
   end
 
-  def self.safe_invert(hash)
-    hash.each_with_object( {} ) { |(key, value), out| ( out[value] ||= [] ) << key }
-  end
+  # def self.safe_invert(hash)
+  #   hash.each_with_object( {} ) { |(key, value), out| ( out[value] ||= [] ) << key }
+  # end
 
   ##Input: Lists of hm and ht SNPs
   ##Output: dictionaries with the id of the fragment as key and the absolute number of SNPs as value
   def self.create_hash_number(array)
     array.each_with_object(Hash.new(0)){|string, hash| hash[string] += 1}
+  end
+
+  # Input: FASTA file
+  # Output: hash of sequence ids with lengths and sequences and total assembly length
+  def self.fasta_parse(fasta_file)
+    sequences = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    assembly_len = 0
+    Bio::FastaFormat.open(fasta_file).each do |inseq|
+      sequences[:seq][inseq.entry_id] = inseq.entry
+      sequences[:len][inseq.entry_id] = inseq.length
+      assembly_len += inseq.length
+    end
+    return sequences, assembly_len
+  end
+
+  # Input1: permutation array of frag ids after SDM
+  # Input2: sequences hash of frag ids and a filename to write
+  # Output will be written to file and if no filename is given
+  # output will be written to "ordered_frags.fasta"
+  def self.write_order(perm, frags, filename='ordered_frags.fasta')
+    File.open(filename, 'w+') do |f|
+      perm.each do |frag|
+        element = Bio::FastaFormat.new(frags[frag].to_s)
+        seqout = Bio::Sequence::NA.new(element.seq).upcase
+        f.puts seqout.to_fasta(element.definition, 80)
+      end
+    end
   end
 
 end
