@@ -57,41 +57,14 @@ class Ratio_filtering
   end
 
 	def self.important_pos(ids_short, pos)
-		sh = []
-		pos.each do |frag, positions|
-			if ids_short.include?(frag)
-		  	else
-		    	pos.delete(frag)
-		  	end
+		pos.keys.each do |frag |
+			unless ids_short.include?(frag)
+        pos.delete(frag)
+      end
 		end
 		sh = pos.values
 		sh.flatten!
 		return sh
 	end
 
-	#Input1 location for the csv file
-	#Input2 hash with the id and positions for the hm SNPs
-	#Input3 hash with the id and ratio for each fragment
-	def self.csv_pos_ratio(csv, pos, ratios)
-		pos_ratio = {}
-#		CSV.open(csv, "wb") do |csv|
-#		  csv << ["Position", "Ratio"]
-#		end
-		short = pos
-		short.each do |id, array|
-		  if ratios.has_key?(id)
-		  else
-		    short.delete(id)
-		  end
-		end
-		short.each do |id, array|
-			array.each do |elem|
-#		  	CSV.open(csv, "ab") do |csv|
-#		  	csv << [elem, ratios[id]]
-		  		pos_ratio.store(elem, ratios[id])
-#		  	end
-		  end
-		end
-		return pos_ratio
-	end
 end

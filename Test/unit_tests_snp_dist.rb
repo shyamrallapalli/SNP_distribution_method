@@ -1,12 +1,11 @@
 #encoding: utf-8
 require_relative '../lib/snp_dist'
-require_relative '../lib/file_rw'
 require 'test/unit'
 
 class TestSNPdist < Test::Unit::TestCase
 
 	def setup
-		@ratios = FileRW.to_array_float("test/ratios_example.txt")
+		@ratios = [0.1, 0.1, 0.2, 0.5, 1.0, 0.2, 0.1]
 		@contig_size = 10
 	end
 
