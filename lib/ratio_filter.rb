@@ -1,7 +1,7 @@
 #encoding: utf-8
 require 'csv'
 
-class Ratio_filtering
+class RatioFilter
 
   def self.get_ratios(inhash)
     ratios = []

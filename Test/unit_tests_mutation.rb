@@ -2,7 +2,7 @@
 require_relative '../lib/mutation'
 require 'test/unit'
 
-class TestLocateMutation < Test::Unit::TestCase
+class TestMutation < Test::Unit::TestCase
 
 	def setup
 		@example_snps = [105,109,87,96,111,95,100,88,110,92]

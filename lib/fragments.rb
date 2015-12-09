@@ -1,6 +1,6 @@
 #encoding: utf-8
 
-class SDM
+class Fragments
 
   #shuffle the contigs with the minimum homozygous scores on the two halves of the expected normal distribution.
   #(1) If the number of contigs is even, half of the array goes to the left and half goes to the right part of the distribution
@@ -48,9 +48,9 @@ class SDM
     keys= dic_hm_inv.keys.to_a
     iterations = (keys.length.to_f/2.0).round
     iterations.times do #repeat the sorting process until the original hash is sorted.
-      left, right, keys = SDM.split(dic_hm_inv, left, right, keys, 0)
+      left, right, keys = Fragments.split(dic_hm_inv, left, right, keys, 0)
       if keys.length >= 1
-        left, right, keys = SDM.split(dic_hm_inv, left, right, keys, 1)
+        left, right, keys = Fragments.split(dic_hm_inv, left, right, keys, 1)
       end
     end
 
@@ -108,7 +108,7 @@ class SDM
   def self.arrange (dic_ratios_inv, dic_pos_hm, cross, average_contig)
 
     # sorting step based on homozygous to heterozygous on ratios
-    perm_ratio, mut_ratio = SDM.sort(dic_ratios_inv, cross, average_contig)
+    perm_ratio, mut_ratio = Fragments.sort(dic_ratios_inv, cross, average_contig)
 
     #***Testing step***
     # identify the SNP positions in the candidate contigs contained in mut

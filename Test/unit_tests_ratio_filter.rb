@@ -1,14 +1,14 @@
 require 'test/unit'
-require_relative '../lib/ratio_filtering'
+require_relative '../lib/ratio_filter'
 
-class TestRatio_filtering < Test::Unit::TestCase
+class TestRatioFilter < Test::Unit::TestCase
 	def test_selected_ratios
 		snp_hm = [0, 14, 20, 2]
 		snp_ht = [5, 4, 2, 5]
 		threshold = 0
 		adjust = 1
 		ids = ["frag1", "frag2", "frag3", "frag4"]
-		dic_ratios, ratios = Ratio_filtering.selected_ratios(snp_hm, snp_ht, ids, threshold, adjust)
+		dic_ratios, ratios = RatioFilter.selected_ratios(snp_hm, snp_ht, ids, threshold, adjust)
 		assert_kind_of(Hash, dic_ratios)
 		assert_kind_of(Array, ratios)
 		assert_equal(dic_ratios, {"frag1" => 1/6.to_f, "frag2" => 3.to_f, "frag3" => 7.to_f, "frag4" => 1/2.to_f})
@@ -18,7 +18,7 @@ class TestRatio_filtering < Test::Unit::TestCase
 	def test_important_pos
 		list = ["frag1", "frag2"]
 		pos = {"frag1"=>[12, 13, 14], "frag2"=>[25], "frag4"=>[45]}
-		pos_short = Ratio_filtering.important_pos(list, pos)
+		pos_short = RatioFilter.important_pos(list, pos)
 		assert_kind_of(Array, pos_short)
 		assert_equal([12, 13, 14, 25], pos_short)
 	end

@@ -2,8 +2,8 @@
 
 require_relative 'lib/file_rw'
 require_relative 'lib/mutation'
-require_relative 'lib/ratio_filtering'
-require_relative 'lib/SDM'
+require_relative 'lib/ratio_filter'
+require_relative 'lib/fragments'
 require_relative 'lib/vcf'
 
 require 'pp'
@@ -80,7 +80,7 @@ end
 
 # ###[3]
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
-input_frags, ratios_hash = Ratio_filtering.selected_ratios(input_frags, threshold)
+input_frags, ratios_hash = RatioFilter.selected_ratios(input_frags, threshold)
 File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
   file.write ratios_hash.to_yaml
 end
@@ -90,7 +90,7 @@ end
 # #Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
 # with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
 # to reconstruct the right side of the distribution, and left, for the left side)
-sdm_frags, mut_frags, hyp_positions = SDM.arrange(ratios_hash, var_pos[:hom], cross, average_contig)
+sdm_frags, mut_frags, hyp_positions = Fragments.arrange(ratios_hash, var_pos[:hom], cross, average_contig)
 FileRW.write_txt("#{log_folder}/4_3_perm_ratio", sdm_frags)
 FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 FileRW.write_txt("#{log_folder}/4_5_hyp_positions", hyp_positions)
@@ -128,7 +128,7 @@ end
 
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-original, dic_ratios_inv  = Ratio_filtering.selected_ratios(original, threshold)
+original, dic_ratios_inv  = RatioFilter.selected_ratios(original, threshold)
 File.open("#{log_folder}/t_10_dic_ratios_inv.yml", 'w') do |file|
   file.write dic_ratios_inv.to_yaml
 end

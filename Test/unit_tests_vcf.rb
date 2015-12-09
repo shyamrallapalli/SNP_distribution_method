@@ -2,7 +2,7 @@
 require_relative '../lib/vcf'
 require 'test/unit'
 
-class TestVCF < Test::Unit::TestCase
+class TestVcf < Test::Unit::TestCase
 	def setup
 		@vcf_ngs = "test/ngs.vcf"
 		@chromosome = 1

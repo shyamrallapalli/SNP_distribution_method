@@ -73,7 +73,7 @@ class Mutation
 
     # generate experimental densities from ratios of the outcome order
     region = mean_contig_len * outcome.keys.length
-    outcome_ratios = Ratio_filtering.get_ratios(outcome)
+    outcome_ratios = RatioFilter.get_ratios(outcome)
     exp_order_density = putative_density(mean_contig_len, outcome_ratios)
 
     # Find the peak in the approximated (hypothetical SNP) distribution
@@ -87,9 +87,9 @@ class Mutation
 
   def self.compare_density(outcome, mut_frags, mean_contig_len, genome_len, dir, original)
     # generate experimental densities from ratios of the outcome order
-    outcome_ratios = Ratio_filtering.get_ratios(outcome)
+    outcome_ratios = RatioFilter.get_ratios(outcome)
     exp_order_density = putative_density(mean_contig_len, outcome_ratios)
-    original_ratios = Ratio_filtering.get_ratios(original)
+    original_ratios = RatioFilter.get_ratios(original)
     real_order_density = putative_density(mean_contig_len, original_ratios)
 
     original_pos, outcome_pos = Mutation.adjusted_positions(mut_frags, original, outcome)
