@@ -56,14 +56,14 @@ puts "A factor of #{adjust} will be used to calculate the ratio"
 
 # ###[1] Open VCF file
 var_num, var_pos = Vcf.snps_in_vcf(vcf_file)
-File.open("#{log_folder}/1_4_frag_pos.yml", "w") do |file|
+File.open("#{log_folder}/1_4_frag_pos.yml", 'w') do |file|
   file.write var_pos.to_yaml
 end
 
-File.open("#{log_folder}/1_5_dic_hm.yml", "w") do |file|
+File.open("#{log_folder}/1_5_dic_hm.yml", 'w') do |file|
   file.write var_num[:hom].to_yaml
 end
-File.open("#{log_folder}/1_6_dic_ht.yml", "w") do |file|
+File.open("#{log_folder}/1_6_dic_ht.yml", 'w') do |file|
   file.write var_num[:het].to_yaml
 end
 
@@ -74,14 +74,14 @@ ids = inseq[:len].keys
 average_contig = genome_length / ids.length
 
 input_frags = Vcf.varpos_aggregate(var_pos, inseq[:len], ids, adjust, 'no')
-File.open("#{log_folder}/t_17_input_frags.yml", "w") do |file|
+File.open("#{log_folder}/t_17_input_frags.yml", 'w') do |file|
   file.write input_frags.to_yaml
 end
 
 # ###[3]
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
 input_frags, ratios_hash = Ratio_filtering.selected_ratios(input_frags, threshold)
-File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", "w") do |file|
+File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
   file.write ratios_hash.to_yaml
 end
 
@@ -111,7 +111,7 @@ puts '______________________'
 
 # #Open FASTA files containing the ordered contigs
 # #from the array take ids and lengths
-fasta_file = "frags.fasta"
+fasta_file = 'frags.fasta'
 inseq_ok, genome_length = FileRW.fasta_parse(fasta_file)
 ids_ok = inseq_ok[:len].keys
 
@@ -119,46 +119,40 @@ original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
 
 # #Hashes with fragments ids and SNP positions for the correctly ordered genome
 origin_pos = Vcf.frag_positions(original)
-File.open("#{log_folder}/t_01_dic_pos_hm.yml", "w") do |file|
+File.open("#{log_folder}/t_01_dic_pos_hm.yml", 'w') do |file|
   file.write origin_pos[:hom].to_yaml
 end
-File.open("#{log_folder}/t_02_dic_pos_ht.yml", "w") do |file|
+File.open("#{log_folder}/t_02_dic_pos_ht.yml", 'w') do |file|
   file.write origin_pos[:het].to_yaml
 end
 
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
 original, dic_ratios_inv  = Ratio_filtering.selected_ratios(original, threshold)
-File.open("#{log_folder}/t_10_dic_ratios_inv.yml", "w") do |file|
+File.open("#{log_folder}/t_10_dic_ratios_inv.yml", 'w') do |file|
   file.write dic_ratios_inv.to_yaml
 end
 
 
 outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], sdm_frags, adjust)
-File.open("#{log_folder}/t_13_original.yml", "w") do |file|
+File.open("#{log_folder}/t_13_original.yml", 'w') do |file|
   file.write original.to_yaml
 end
-File.open("#{log_folder}/t_14_outcome.yml", "w") do |file|
+File.open("#{log_folder}/t_14_outcome.yml", 'w') do |file|
   file.write outcome.to_yaml
 end
-
-out_original = File.open("#{log_folder}/t_15_original.txt", "w")
-out_original.puts "Frag\thm\tht\tratio\tlen\thm_pos\tht_pos\n"
-original.each_key { |key|
-  hash = original[key]
-  out_original.puts "#{key}\t#{hash[:hm]}\t#{hash[:ht]}\t#{hash[:ratio]}\t#{hash[:len]}\t#{hash[:hm_pos].join(" ")}\t#{hash[:ht_pos].join(" ")}\n"
-}
-
-out_outcome = File.open("#{log_folder}/t_16_outcome.txt", "w")
-out_outcome.puts "Frag\thm\tht\tratio\tlen\thm_pos\tht_pos\n"
-outcome.each_key { |key|
-  hash = outcome[key]
-  out_outcome.puts "#{key}\t#{hash[:hm]}\t#{hash[:ht]}\t#{hash[:ratio]}\t#{hash[:len]}\t#{hash[:hm_pos].join(" ")}\t#{hash[:ht_pos].join(" ")}\n"
-}
 
 # ###[6] Plots
 
 # #Plot expected vs SDM ratios, QQplots
 
-Mutation.density_plots(outcome, mut_frags, var_pos[:hom], average_contig.to_f, genome_length, output_folder,  original, log_folder)
-#    average_contig.to_f, ratios, sdm_ratios, hom_snps, het_snps, region, genome_length, output_folder, mut_frags, var_pos[:hom], original, outcome)
+candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
+File.open("#{output_folder}/mutation.txt", 'w+') do |f|
+  f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
+  f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
+end
+
+Mutation.density_plot(outcome, average_contig.to_f, output_folder)
+
+Mutation.compare_density(outcome, mut_frags, average_contig.to_f, genome_length, output_folder,  original)
+
