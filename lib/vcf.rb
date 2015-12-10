@@ -7,7 +7,7 @@ class Vcf
 
   ##Input: vcf file
   ##Ouput: lists of hm and ht SNPS and hash of all fragments with variants
-  def self.snps_in_vcf(vcf_file, ht_cutoff=0.5, hm_cutoff=1.0)
+  def self.get_vars(vcf_file, ht_cutoff=0.5, hm_cutoff=1.0)
     # hash of :het and :hom with frag ids and respective variant positions
     var_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     File.open(vcf_file, 'r').each do |line|
@@ -31,55 +31,7 @@ class Vcf
       end
     end
 
-    # hash of :het and :hom with frag ids and respective variant count
-    var_num = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-    var_pos.keys.each do | vars |
-      var_pos[vars].keys.each do | id |
-        num_vars = var_pos[vars][id].length
-        var_num[vars][id] = num_vars
-      end
-    end
-    [var_num, var_pos]
-  end
-
-  def self.open_vcf(vcf_file, chromosome)
-    vcfs_chrom = []
-    vcfspos = []
-    vcfsinfo = []
-    new_vcf = []
-    File.open(vcf_file, 'r').each do |line|
-      next if line =~ /^#/
-      v = Bio::DB::Vcf.new(line)
-      vcfs_chrom << v.chrom
-      vcfspos << v.pos
-      vcfsinfo << v.info
-      # a = line.split("\t")
-      new_vcf << line if v.chrom == "#{chromosome}"
-    end
-    [new_vcf, vcfs_chrom, vcfspos, vcfsinfo]
-  end
-
-  def self.type_per_pos(vcfs_info, vcfs_pos)
-    snps = {}
-    x = 0
-    vcfs_info.each do |hash|
-      hash.each do |type, number|
-        if number == '1'
-          snps.store(vcfs_pos[x], type)
-          x += 1
-        end
-      end
-    end
-    hm = []
-    ht = []
-    snps.each do |pos, type|
-      if type == 'HET'
-        ht << pos
-      elsif type == 'HOM'
-        hm << pos
-      end
-    end
-    [snps, hm, ht]
+    var_pos
   end
 
   def self.filtering(vcfs_pos_c, snps_p, snps_c, child_chr_vcf)
@@ -149,25 +101,6 @@ class Vcf
       ht_list << fragdetails[frag][:ht_pos]
     }
     [hm_list.flatten!, ht_list.flatten!]
-  end
-
-  # function to get a hash of frag ids and cumulative variant positions
-  # input: a hash of frag ids with all details and variant positions
-  # hash input is resutled from varpos_aggregate method
-  # output: a has of frag ids and cumulative variant positions
-  def self.frag_positions(fragdetails)
-    farg_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-    fragdetails.keys.each { | frag |
-      hm_pos = fragdetails[frag][:hm_pos]
-      ht_pos = fragdetails[frag][:ht_pos]
-      unless hm_pos.empty?
-        farg_pos[:hom][frag] = hm_pos
-      end
-      unless ht_pos.empty?
-        farg_pos[:het][frag] = ht_pos
-      end
-    }
-    farg_pos
   end
 
 end

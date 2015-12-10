@@ -55,16 +55,9 @@ puts "A factor of #{adjust} will be used to calculate the ratio"
 
 
 # ###[1] Open VCF file
-var_num, var_pos = Vcf.snps_in_vcf(vcf_file)
+var_pos = Vcf.get_vars(vcf_file)
 File.open("#{log_folder}/1_4_frag_pos.yml", 'w') do |file|
   file.write var_pos.to_yaml
-end
-
-File.open("#{log_folder}/1_5_dic_hm.yml", 'w') do |file|
-  file.write var_num[:hom].to_yaml
-end
-File.open("#{log_folder}/1_6_dic_ht.yml", 'w') do |file|
-  file.write var_num[:het].to_yaml
 end
 
 # ###[2] Open FASTA files containing the unordered contigs
@@ -95,6 +88,7 @@ sdm_frags, mut_frags = Fragments.arrange(ratios_hash, cross, average_contig)
 FileRW.write_txt("#{log_folder}/4_3_perm_ratio", sdm_frags)
 FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 
+
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
 filename = "ordered_frags_thres#{threshold}.fasta"
@@ -104,7 +98,22 @@ region = average_contig * (sdm_frags.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
 puts '______________________'
 
-########## Test comparison inputs and analysis
+outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], sdm_frags, adjust)
+
+
+# ###[6] Plots
+
+# #Plot expected vs SDM ratios, QQplots
+candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
+File.open("#{output_folder}/mutation.txt", 'w+') do |f|
+  f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
+  f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
+end
+
+Mutation.density_plot(outcome, average_contig.to_f, output_folder)
+
+
+########## Test comparison inputs and analysis and comparison
 
 # #Open FASTA files containing the ordered contigs
 # #from the array take ids and lengths
@@ -114,15 +123,6 @@ ids_ok = inseq_ok[:len].keys
 
 original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
 
-# #Hashes with fragments ids and SNP positions for the correctly ordered genome
-origin_pos = Vcf.frag_positions(original)
-File.open("#{log_folder}/t_01_dic_pos_hm.yml", 'w') do |file|
-  file.write origin_pos[:hom].to_yaml
-end
-File.open("#{log_folder}/t_02_dic_pos_ht.yml", 'w') do |file|
-  file.write origin_pos[:het].to_yaml
-end
-
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
 original, dic_ratios_inv  = RatioFilter.selected_ratios(original, threshold)
@@ -131,25 +131,12 @@ File.open("#{log_folder}/t_10_dic_ratios_inv.yml", 'w') do |file|
 end
 
 
-outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], sdm_frags, adjust)
 File.open("#{log_folder}/t_13_original.yml", 'w') do |file|
   file.write original.to_yaml
 end
 File.open("#{log_folder}/t_14_outcome.yml", 'w') do |file|
   file.write outcome.to_yaml
 end
-
-# ###[6] Plots
-
-# #Plot expected vs SDM ratios, QQplots
-
-candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
-File.open("#{output_folder}/mutation.txt", 'w+') do |f|
-  f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
-  f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
-end
-
-Mutation.density_plot(outcome, average_contig.to_f, output_folder)
 
 Mutation.compare_density(outcome, mut_frags, average_contig.to_f, genome_length, output_folder,  original)
 

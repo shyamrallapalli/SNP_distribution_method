@@ -15,8 +15,8 @@ class TestVcf < Test::Unit::TestCase
     @fasta_file = "test/test.fasta"
 	end
 
-  def test_snps_in_vcf
-    snp_data, hm, ht = Vcf.snps_in_vcf(@vcf_file)
+  def test_get_vars
+    snp_data, hm, ht = Vcf.get_vars(@vcf_file)
     assert_equal(["frag1", "frag1"], hm)
     assert_equal(["frag2", "frag3"], ht)
     assert_equal([["frag1", "frag1", "frag2", "frag3"], [7, 8, 2, 2], {"frag1" =>2, "frag2" =>1, "frag3" =>1}, [{"AF"=>"1.0"},{"AF"=>"1.0"},{"AF"=>"0.5"},{"AF"=>"0.5"}]], snp_data)
