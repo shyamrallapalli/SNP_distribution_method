@@ -18,26 +18,24 @@ class FileRW
   end
 
   # Input: FASTA file
-  # Output: hash of sequence ids with lengths and sequences and total assembly length
+  # Output: hash of sequence ids with lengths and sequences
   def self.fasta_parse(fasta_file)
     sequences = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-    assembly_len = 0
     Bio::FastaFormat.open(fasta_file).each do |inseq|
       sequences[:seq][inseq.entry_id] = inseq.entry
       sequences[:len][inseq.entry_id] = inseq.length
-      assembly_len += inseq.length
     end
-    return sequences, assembly_len
+    sequences
   end
 
   # Input1: permutation array of frag ids after SDM
   # Input2: sequences hash of frag ids and a filename to write
   # Output will be written to file and if no filename is given
   # output will be written to "ordered_frags.fasta"
-  def self.write_order(perm, frags, filename='ordered_frags.fasta')
+  def self.write_order(array, seqhash, filename='ordered_frags.fasta')
     File.open(filename, 'w+') do |f|
-      perm.each do |frag|
-        element = Bio::FastaFormat.new(frags[frag].to_s)
+      array.each do |frag|
+        element = Bio::FastaFormat.new(seqhash[frag].to_s)
         seqout = Bio::Sequence::NA.new(element.seq).upcase
         f.puts seqout.to_fasta(element.definition, 80)
       end

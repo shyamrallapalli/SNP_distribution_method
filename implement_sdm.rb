@@ -69,8 +69,9 @@ end
 
 # ###[2] Open FASTA files containing the unordered contigs
 # #Create a hash with shuffled fragments seq ids - values are lengths and sequences
-inseq, genome_length = FileRW.fasta_parse(fasta_shuffle)
+inseq = FileRW.fasta_parse(fasta_shuffle)
 ids = inseq[:len].keys
+genome_length = inseq[:len].values.inject { | sum, n | sum + n }
 average_contig = genome_length / ids.length
 
 input_frags = Vcf.varpos_aggregate(var_pos, inseq[:len], ids, adjust, 'no')
@@ -112,7 +113,7 @@ puts '______________________'
 # #Open FASTA files containing the ordered contigs
 # #from the array take ids and lengths
 fasta_file = 'frags.fasta'
-inseq_ok, genome_length = FileRW.fasta_parse(fasta_file)
+inseq_ok = FileRW.fasta_parse(fasta_file)
 ids_ok = inseq_ok[:len].keys
 
 original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
