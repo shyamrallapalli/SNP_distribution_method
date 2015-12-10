@@ -15,12 +15,4 @@ class TestRatioFilter < Test::Unit::TestCase
 		assert_equal(ratios, [1/6.to_f, 3.to_f, 7.to_f, 1/2.to_f])
 	end
 
-	def test_important_pos
-		list = ["frag1", "frag2"]
-		pos = {"frag1"=>[12, 13, 14], "frag2"=>[25], "frag4"=>[45]}
-		pos_short = RatioFilter.important_pos(list, pos)
-		assert_kind_of(Array, pos_short)
-		assert_equal([12, 13, 14, 25], pos_short)
-	end
-
 end

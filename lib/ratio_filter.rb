@@ -56,15 +56,4 @@ class RatioFilter
     return inhash, ratios_hash
   end
 
-  def self.important_pos(ids_short, pos)
-    pos.keys.each do |frag |
-      unless ids_short.include?(frag)
-        pos.delete(frag)
-      end
-    end
-    sh = pos.values
-    sh.flatten!
-    return sh
-  end
-
 end

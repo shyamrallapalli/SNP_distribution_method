@@ -49,22 +49,6 @@ class Mutation
     candidate_frags
   end
 
-  def self.adjusted_positions(candidate_frags, original, outcome)
-    original_pos, outcome_pos = [], []
-    candidate_frags.each { |frag|
-      original_pos << original[frag][:hm_pos] if original.key?(frag)
-      outcome_pos << outcome[frag][:hm_pos] if outcome.key?(frag)
-    }
-    original_pos.flatten!
-    outcome_pos.flatten!
-    # calculate mean of orignal and outcome position to adj position on plots
-    original_mean = original_pos.mean
-    outcome_mean = outcome_pos.mean
-    adj_mean = original_mean - outcome_mean
-    outcome_pos.map! {|x| x + adj_mean.to_i }
-    [original_pos, outcome_pos]
-  end
-
   def self.density_plot(outcome, mean_contig_len, dir)
     # create arrays with the  SNP positions in the new ordered file.
     snps_hm, snps_ht = Vcf.varpositions(outcome)
@@ -85,6 +69,22 @@ class Mutation
 
   end
 
+  def self.adjusted_positions(candidate_frags, original, outcome)
+    original_pos, outcome_pos = [], []
+    candidate_frags.each { |frag|
+      original_pos << original[frag][:hm_pos] if original.key?(frag)
+      outcome_pos << outcome[frag][:hm_pos] if outcome.key?(frag)
+    }
+    original_pos.flatten!
+    outcome_pos.flatten!
+    # calculate mean of orignal and outcome position to adj position on plots
+    original_mean = original_pos.mean
+    outcome_mean = outcome_pos.mean
+    adj_mean = original_mean - outcome_mean
+    outcome_pos.map! {|x| x + adj_mean.to_i }
+    [original_pos, outcome_pos]
+  end
+
   def self.compare_density(outcome, mut_frags, mean_contig_len, genome_len, dir, original)
     # generate experimental densities from ratios of the outcome order
     outcome_ratios = RatioFilter.get_ratios(outcome)
@@ -92,7 +92,7 @@ class Mutation
     original_ratios = RatioFilter.get_ratios(original)
     real_order_density = putative_density(mean_contig_len, original_ratios)
 
-    original_pos, outcome_pos = Mutation.adjusted_positions(mut_frags, original, outcome)
+    original_pos, outcome_pos = adjusted_positions(mut_frags, original, outcome)
     region = mean_contig_len * outcome.keys.length
     ylim = Plot.get_ylim(exp_order_density, region)
     Plot.comparison(real_order_density, exp_order_density, genome_len, dir, ylim, original_pos, outcome_pos)
