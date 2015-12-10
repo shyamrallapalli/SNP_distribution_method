@@ -8,9 +8,9 @@ class Fragments
   ##if there's only 1 contig, we randomly assign the right or left destination for it
   ##if there are more than 1 contigs, we take the first contig in the array and randomly assign the right or left destination for it.
   # The remaining array have a even number of elements, so we proceed as described in (1)
-  def self.split(dic_hm_inv, left, right, keys_hm, dest)
-    minimum = keys_hm.min # get minimum score
-    contigs_at_min = dic_hm_inv.values_at(minimum).flatten # look for the contigs with the minimum score
+  def self.split(ratios_hash, left, right, ratio_keys, dest)
+    minimum = ratio_keys.min # get minimum score
+    contigs_at_min = ratios_hash.values_at(minimum).flatten # look for the contigs with the minimum score
     num_frags = contigs_at_min.length
     half = num_frags/2
     ## even number of contigs
@@ -35,22 +35,22 @@ class Fragments
       end
     end
     #delete entries for contigs with the minimum homozygous score from the original hash
-    keys_hm.delete(minimum)
-    [left, right, keys_hm]
+    ratio_keys.delete(minimum)
+    [left, right, ratio_keys]
   end
 
 
   ##Input for sorting: inverted hash containing the normalised homozygous scores as key and the fragments' ids as value.
   ##Output from sorting: perm is the permutation array containing the candidate order of contigs
   # and mut is the array of candidate contigs taken from the central part of perm
-  def self.sort(dic_hm_inv, cross, average_contig)
+  def self.arrange(ratios_hash, cross, average_contig)
     left, right = [], []
-    keys= dic_hm_inv.keys.to_a
-    iterations = (keys.length.to_f/2.0).round
+    ratio_keys= ratios_hash.keys.to_a
+    iterations = (ratio_keys.length.to_f/2.0).round
     iterations.times do #repeat the sorting process until the original hash is sorted.
-      left, right, keys = Fragments.split(dic_hm_inv, left, right, keys, 0)
-      if keys.length >= 1
-        left, right, keys = Fragments.split(dic_hm_inv, left, right, keys, 1)
+      left, right, ratio_keys = Fragments.split(ratios_hash, left, right, ratio_keys, 0)
+      if ratio_keys.length >= 1
+        left, right, ratio_keys = Fragments.split(ratios_hash, left, right, ratio_keys, 1)
       end
     end
 
@@ -101,33 +101,4 @@ class Fragments
     [perm, mut]
   end
 
-  ###Input for calling: inverted hashes with homozygous densities and ratios as key and ids as value, the type of cross and the hash containing the ids and the hm SNP positions.
-  ###Output from calling: contig permutation based on homozygous SNP, contig permutation based on ratios, array of candidate contigs taken from the central part of both permutations (mut) and
-  #candidate positions for causal mutations  (hyp) - this is used to prove the efficiency of SDM as we know the correct order and the position of the mutation,
-  #in a real experiment this will not be known -
-  def self.arrange (dic_ratios_inv, dic_pos_hm, cross, average_contig)
-
-    # sorting step based on homozygous to heterozygous on ratios
-    perm_ratio, mut_ratio = Fragments.sort(dic_ratios_inv, cross, average_contig)
-
-    #***Testing step***
-    # identify the SNP positions in the candidate contigs contained in mut
-    or_pos = {}
-    mut_ratio.each { |frag|
-      if dic_pos_hm.has_key?(frag)
-        or_pos.store(frag, dic_pos_hm[frag])
-      end
-    }
-
-    # number_of_snps = []
-    # or_pos.values.each do | array|
-    #     number_of_snps << array.length
-    # end
-    # or_pos.delete_if { |id, array|  array.length < (number_of_snps.max - 1) }
-    hyp = or_pos.values.sort.flatten!
-    return perm_ratio, mut_ratio, hyp
-  end
-
 end
-
-
