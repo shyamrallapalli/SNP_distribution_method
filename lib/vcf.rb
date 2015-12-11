@@ -5,6 +5,41 @@ require_relative 'file_rw'
 
 class Vcf
 
+  def self.get_allele_freq(vcf_obj)
+    allele_freq = 0
+    if vcf_obj.info.key?('DP4')
+      freq = vcf_obj.info['DP4'].split(',')
+      depth = freq.inject { | sum, n | sum + n.to_f }
+      alt = freq[2].to_f + freq[3].to_f
+      allele_freq = alt / depth
+    elsif vcf_obj.info.key?('RD')
+      alt = vcf_obj.info['AD'].to_f
+      depth = vcf_obj.info['RD'].to_f + alt
+      allele_freq = alt / depth
+    elsif vcf_obj.info.key?('AD')
+      info =  vcf_obj.info['AD']
+      if info =~ /','/
+        freq = vcf_obj.info['DP4'].split(',')
+        allele_freq = freq[1].to_f / ( freq[0].to_f + freq[1].to_f )
+      elsif vcf_obj.info.key?('GT')
+        gt = vcf_obj.info['GT']
+        if gt == '1/1'
+          allele_freq = 1.0
+        elsif gt == '0/1'
+          allele_freq = 0.5
+        end
+      end
+    elsif vcf_obj.info.key?('AF')
+      allele_freq = vcf_obj.info['AF'].to_f
+    else
+      warn "not a known vcf format and\
+ check that it is one sample vcf\n"
+      exit
+    end
+    warn "#{allele_freq}\n"
+    allele_freq
+  end
+
   ##Input: vcf file
   ##Ouput: lists of hm and ht SNPS and hash of all fragments with variants
   def self.get_vars(vcf_file, ht_cutoff=0.5, hm_cutoff=1.0)
@@ -13,7 +48,7 @@ class Vcf
     File.open(vcf_file, 'r').each do |line|
       next if line =~ /^#/
       v = Bio::DB::Vcf.new(line)
-      allele_freq = v.info['AF'].to_f
+      allele_freq = get_allele_freq(v)
       if allele_freq == ht_cutoff
         if var_pos[:het].has_key?(v.chrom)
           var_pos[:het][v.chrom] << v.pos
