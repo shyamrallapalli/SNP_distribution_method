@@ -69,21 +69,21 @@ class Vcf
     var_pos
   end
 
-  def self.filtering(vcfs_pos_c, snps_p, snps_c, child_chr_vcf)
-    short_vcfs_pos_c = vcfs_pos_c
-    short_vcfs_pos_c.flatten!
-    snps_p.each do |pos, _type|
-      if snps_c.key?(pos)
-        snps_c.delete(pos)
-        short_vcfs_pos_c.delete(pos)
+  def self.filtering(mutant_vcf, parent_vcf)
+    var_pos_mut = get_vars(mutant_vcf)
+    var_pos_bg = get_vars(parent_vcf)
+
+    var_pos_mut.each_key do | type |
+      var_pos_mut[type].each_key do | frag |
+        positions = var_pos_mut[type][frag]
+        parent_pos = var_pos_bg[type][frag]
+        positions.each do | pos  |
+          positions.delete_if {|x| parent_pos.include?(pos) }
+        end
+        var_pos_mut[type][frag] = positions
       end
     end
-    short_child_chr_vcf = []
-    child_chr_vcf.each do |line|
-      position = line.split("\t")[1].to_i
-      short_child_chr_vcf << line if short_vcfs_pos_c.include?(position)
-    end
-    short_child_chr_vcf
+    var_pos_mut
   end
 
   # function to get cumulative variant positions from the order of fragments
