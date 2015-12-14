@@ -7,56 +7,61 @@ class Vcf
 
   def self.get_allele_freq(vcf_obj)
     allele_freq = 0
+    # check if the vcf is from samtools (has DP4 and AF1 fields in INFO)
     if vcf_obj.info.key?('DP4')
       freq = vcf_obj.info['DP4'].split(',')
       depth = freq.inject { | sum, n | sum + n.to_f }
       alt = freq[2].to_f + freq[3].to_f
       allele_freq = alt / depth
-    elsif vcf_obj.info.key?('RD')
-      alt = vcf_obj.info['AD'].to_f
-      depth = vcf_obj.info['RD'].to_f + alt
+    # check if the vcf has has AF fields in INFO
+    elsif vcf_obj.info.key?('AF')
+      allele_freq = vcf_obj.info['AF'].to_f
+    # check if the vcf is from VarScan (has RD, AD and FREQ fields in FORMAT)
+    elsif vcf_obj.format.key?('RD')
+      alt = vcf_obj.format['AD'].to_f
+      depth = vcf_obj.format['RD'].to_f + alt
       allele_freq = alt / depth
-    elsif vcf_obj.info.key?('AD')
-      info =  vcf_obj.info['AD']
+    # check if the vcf is from GATK (has AD and GT fields in FORMAT)
+    elsif vcf_obj.format.key?('AD')
+      info =  vcf_obj.format['AD']
       if info =~ /','/
-        freq = vcf_obj.info['DP4'].split(',')
+        freq = vcf_obj.format['AD'].split(',')
         allele_freq = freq[1].to_f / ( freq[0].to_f + freq[1].to_f )
-      elsif vcf_obj.info.key?('GT')
-        gt = vcf_obj.info['GT']
+      elsif vcf_obj.info.key?('AF')
+        allele_freq = vcf_obj.info['AF'].to_f
+      elsif vcf_obj.format.key?('GT')
+        gt = vcf_obj.format['GT']
         if gt == '1/1'
           allele_freq = 1.0
         elsif gt == '0/1'
           allele_freq = 0.5
         end
       end
-    elsif vcf_obj.info.key?('AF')
-      allele_freq = vcf_obj.info['AF'].to_f
     else
-      warn "not a known vcf format and\
- check that it is one sample vcf\n"
+      warn "not a known vcf format and \
+check that it is one sample vcf\n"
       exit
     end
-    warn "#{allele_freq}\n"
     allele_freq
   end
 
   ##Input: vcf file
   ##Ouput: lists of hm and ht SNPS and hash of all fragments with variants
-  def self.get_vars(vcf_file, ht_cutoff=0.5, hm_cutoff=1.0)
+  def self.get_vars(vcf_file, ht_low = 0.25, ht_high = 0.75)
     # hash of :het and :hom with frag ids and respective variant positions
     var_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     File.open(vcf_file, 'r').each do |line|
       next if line =~ /^#/
       v = Bio::DB::Vcf.new(line)
       allele_freq = get_allele_freq(v)
-      if allele_freq == ht_cutoff
+      if allele_freq.between?(ht_low, ht_high)
         if var_pos[:het].has_key?(v.chrom)
           var_pos[:het][v.chrom] << v.pos
         else
           var_pos[:het][v.chrom] = []
           var_pos[:het][v.chrom] << v.pos
         end
-      elsif allele_freq == hm_cutoff
+      elsif allele_freq > ht_high
         if  var_pos[:hom].has_key?(v.chrom)
           var_pos[:hom][v.chrom] << v.pos
         else
@@ -77,9 +82,7 @@ class Vcf
       var_pos_mut[type].each_key do | frag |
         positions = var_pos_mut[type][frag]
         parent_pos = var_pos_bg[type][frag]
-        positions.each do | pos  |
-          positions.delete_if {|x| parent_pos.include?(pos) }
-        end
+        positions.delete_if { | pos | parent_pos.include?(pos) }
         var_pos_mut[type][frag] = positions
       end
     end
