@@ -1,7 +1,6 @@
 # encoding: utf-8
 require 'bio'
 require 'bio-samtools'
-require_relative 'file_rw'
 
 class Vcf
 

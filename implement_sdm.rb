@@ -74,7 +74,7 @@ end
 
 # ###[3]
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
-input_frags, ratios_hash = RatioFilter.selected_ratios(input_frags, threshold)
+ratios_hash = RatioFilter.selected_ratios(input_frags, threshold)
 File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
   file.write ratios_hash.to_yaml
 end
@@ -125,11 +125,18 @@ original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
 
 
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-original, dic_ratios_inv  = RatioFilter.selected_ratios(original, threshold)
+dic_ratios_inv  = RatioFilter.selected_ratios(original, threshold)
 File.open("#{log_folder}/t_10_dic_ratios_inv.yml", 'w') do |file|
   file.write dic_ratios_inv.to_yaml
 end
 
+# delete fragments which are discarded via ratio selection
+selected_frags = dic_ratios_inv.values.flatten
+original.each_key do | fragid |
+  unless selected_frags.include?(fragid)
+    original.delete(fragid)
+  end
+end
 
 File.open("#{log_folder}/t_13_original.yml", 'w') do |file|
   file.write original.to_yaml

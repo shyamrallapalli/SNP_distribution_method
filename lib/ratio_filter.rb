@@ -53,7 +53,7 @@ class RatioFilter
     else
       ratios_hash = ratio_hash(inhash)
     end
-    return inhash, ratios_hash
+    ratios_hash
   end
 
 end

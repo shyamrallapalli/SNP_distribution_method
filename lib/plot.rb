@@ -45,11 +45,11 @@ class Plot
 
   def self.densities(hm, ht, ratio, length, dir)
     myr = RinRuby.new(:echo=>false)
-    myr.hm =  hm
-    myr.ht =  ht
-    myr.ratio = ratio
-    myr.length = length
-    myr.dir = dir
+    myr.assign 'hm', hm
+    myr.assign 'ht', ht
+    myr.assign 'ratio', ratio
+    myr.assign 'length', length
+    myr.assign 'dir', dir
     myr.eval 'png(paste(dir,"/", "experimental densities",".png", sep=""), width=800,height=500)
     options(scipen = 10)
     d1 <-density(hm, adjust = 1, kernel = c("gaussian"))
@@ -78,13 +78,13 @@ class Plot
 
   def self.comparison(real_ratios, experimental, length, dir, ylim, original_pos, outcome_pos)
     myr = RinRuby.new(:echo=>false)
-    myr.experimental = experimental
-    myr.real_ratios =  real_ratios
-    myr.length = length
-    myr.dir = dir
-    myr.ylim = ylim
-    myr.original_pos = original_pos
-    myr.outcome_pos = outcome_pos
+    myr.assign 'experimental', experimental
+    myr.assign 'real_ratios', real_ratios
+    myr.assign 'length', length
+    myr.assign 'dir', dir
+    myr.assign 'ylim', ylim
+    myr.assign 'original_pos', original_pos
+    myr.assign 'outcome_pos', outcome_pos
 
     myr.eval 'd1 <-density(experimental, adjust = 1, kernel = c("gaussian"))
     d2 <-density(real_ratios, adjust = 1, kernel = c("gaussian"))
@@ -106,15 +106,15 @@ class Plot
 
   def self.plot_snps(snp_pos, correct_snps, dir, dataset_run, gen, genome_length, type, title, ylim)
     myr = RinRuby.new(:echo=>false)
-    myr.snp_pos = snp_pos
-    myr.dir = dir
-    myr.correct_snps = correct_snps
-    myr.genome_length = genome_length
-    myr.dataset_run = dataset_run
-    myr.gen = gen
-    myr.type = type
-    myr.title = title
-    myr.ylim = ylim
+    myr.assign 'snp_pos', snp_pos
+    myr.assign 'dir', dir
+    myr.assign 'correct_snps', correct_snps
+    myr.assign 'genome_length', genome_length
+    myr.assign 'dataset_run', dataset_run
+    myr.assign 'gen', gen
+    myr.assign 'type', type
+    myr.assign 'title', title
+    myr.assign 'ylim', ylim
     myr.eval 'png(paste("~/",dir,"/", dataset_run, "/Plot_", type, ".png", sep=""))
     plot((1:512)*(genome_length/512), density(snp_pos)$y, xlim=c(0,genome_length), ylim=c(0,ylim), xlab="Genome length",
       ylab="Density", main=title)

@@ -25,7 +25,7 @@ class Mutation
   def self.closest_snp(ratios, hm, n)
     myr = RinRuby.new(:echo=>false)
     myr.n = n
-    myr.ratios = ratios
+    myr.assign 'ratios', ratios
     myr.eval 'kernel_density <- density(ratios, n=n)'
     # this only finds the first index with the max density if there is > 1
     myr.eval 'index <- match(max(kernel_density$y),kernel_density$y)'
