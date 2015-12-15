@@ -11,25 +11,24 @@ class Plot
     myr.assign 'ylabel', ylabel
     myr.assign 'dir', dir
     myr.assign 'nametag', nametag
-    myr.eval 'png(paste(dir, "/", nametag, "_qqplot_exp_hyp", ".png", sep=""), width=500, height=500)
-    qqline2 <- function(x, y, probs = c(0.25, 0.75), qtype = 7, ...)
-      {
-        stopifnot(length(probs) == 2)
-        x2 <- quantile(x, probs, names=FALSE, type=qtype, na.rm = TRUE)
-        y2 <- quantile(y, probs, names=FALSE, type=qtype, na.rm = TRUE)
-        slope <- diff(y2)/diff(x2)
-        int <- y2[1L] - slope*x2[1L]
-        abline(int, slope, ...)
-      }
+    myr.eval 'qqline2 <- function(x, y, probs = c(0.25, 0.75), qtype = 7, ...){
+      stopifnot(length(probs) == 2)
+      x2 <- quantile(x, probs, names=FALSE, type=qtype, na.rm = TRUE)
+      y2 <- quantile(y, probs, names=FALSE, type=qtype, na.rm = TRUE)
+      slope <- diff(y2)/diff(x2)
+      int <- y2[1L] - slope*x2[1L]
+      abline(int, slope, ...)
+    }
 
-    leg_r2 <- function(k)
-      {
-        legend(x = "topleft", bty = "n",
-               legend = substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,
-                                   list(a = format(coef(k)[1], digits = 2),
-                                        b = format(coef(k)[2], digits = 2),
-                                        r2 = format(summary(k)$r.squared, digits = 3))))
-      }
+    leg_r2 <- function(k){
+      legend(x = "topleft", bty = "n",
+             legend = substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,
+                                 list(a = format(coef(k)[1], digits = 2),
+                                      b = format(coef(k)[2], digits = 2),
+                                      r2 = format(summary(k)$r.squared, digits = 3))))
+    }
+
+    png(paste(dir, "/", nametag, "_qqplot_exp_hyp", ".png", sep=""), width=500, height=500)
     options(scipen = 10)
     x <- experimental
     y <- rnorm(length(x), mean(x), sd(x))
@@ -100,25 +99,6 @@ class Plot
     plot(d2$x, d2$y, col = "steelblue3", lwd =2, type = "l", main="original ratios", xlab="", ylab="")
     plot(d2$x, d2$y, type = "n", main = "original var positions", xlim =c(0,length), xlab="genome positions", ylab="", yaxt="n")
     abline(v=original_pos, col = "red", lty=2)
-    dev.off()'
-    myr.quit
-  end
-
-  def self.plot_snps(snp_pos, correct_snps, dir, dataset_run, gen, genome_length, type, title, ylim)
-    myr = RinRuby.new(:echo=>false)
-    myr.assign 'snp_pos', snp_pos
-    myr.assign 'dir', dir
-    myr.assign 'correct_snps', correct_snps
-    myr.assign 'genome_length', genome_length
-    myr.assign 'dataset_run', dataset_run
-    myr.assign 'gen', gen
-    myr.assign 'type', type
-    myr.assign 'title', title
-    myr.assign 'ylim', ylim
-    myr.eval 'png(paste("~/",dir,"/", dataset_run, "/Plot_", type, ".png", sep=""))
-    plot((1:512)*(genome_length/512), density(snp_pos)$y, xlim=c(0,genome_length), ylim=c(0,ylim), xlab="Genome length",
-      ylab="Density", main=title)
-    lines((1:512)*(genome_length/512), density(correct_snps)$y, lwd=3, col="#000099")
     dev.off()'
     myr.quit
   end

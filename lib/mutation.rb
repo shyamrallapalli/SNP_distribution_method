@@ -18,15 +18,15 @@ class Mutation
     positions.flatten!
   end
 
-  # Input 0: List ratios from sdm
+  # Input 0: putative density from ratios
   # Input 1: List of homozygous SNP positions
   # Input 2: The number of equally spaced points at which the density is to be estimated. Specify n as a power of two.
   # Output: get the highest kernel density value and returns closest homozygous SNP to the peak
-  def self.closest_snp(ratios, hm, n)
+  def self.closest_snp(density, hm, n)
     myr = RinRuby.new(:echo=>false)
-    myr.n = n
-    myr.assign 'ratios', ratios
-    myr.eval 'kernel_density <- density(ratios, n=n)'
+    myr.assign 'n', n
+    myr.assign 'data', density
+    myr.eval 'kernel_density <- density(data, n=n)'
     # this only finds the first index with the max density if there is > 1
     myr.eval 'index <- match(max(kernel_density$y),kernel_density$y)'
     myr.eval 'peak <- kernel_density$x[index]'
