@@ -18,20 +18,20 @@ class Vcf
     elsif vcf_obj.info.key?('AF')
       allele_freq = vcf_obj.info['AF'].to_f
     # check if the vcf is from VarScan (has RD, AD and FREQ fields in FORMAT)
-    elsif vcf_obj.format.key?('RD')
-      alt = vcf_obj.format['AD'].to_f
-      depth = vcf_obj.format['RD'].to_f + alt
+    elsif vcf_obj.samples['1'].key?('RD')
+      alt = vcf_obj.samples['1']['AD'].to_f
+      depth = vcf_obj.samples['1']['RD'].to_f + alt
       allele_freq = alt / depth
     # check if the vcf is from GATK (has AD and GT fields in FORMAT)
-    elsif vcf_obj.format.key?('AD')
-      info =  vcf_obj.format['AD']
+    elsif vcf_obj.samples['1'].key?('AD')
+      info =  vcf_obj.samples['1']['AD']
       if info =~ /','/
-        freq = vcf_obj.format['AD'].split(',')
+        freq = vcf_obj.samples['1']['AD'].split(',')
         allele_freq = freq[1].to_f / ( freq[0].to_f + freq[1].to_f )
       elsif vcf_obj.info.key?('AF')
         allele_freq = vcf_obj.info['AF'].to_f
-      elsif vcf_obj.format.key?('GT')
-        gt = vcf_obj.format['GT']
+      elsif vcf_obj.samples['1'].key?('GT')
+        gt = vcf_obj.samples['1']['GT']
         if gt == '1/1'
           allele_freq = 1.0
         elsif gt == '0/1'
@@ -86,7 +86,11 @@ check that it is one sample vcf\n"
         positions = var_pos_mut[type][frag]
         parent_pos = var_pos_bg[type][frag]
         positions.delete_if { | pos | parent_pos.include?(pos) }
-        var_pos_mut[type][frag] = positions
+        if positions.empty?
+          var_pos_mut[type].delete(frag)
+        else
+          var_pos_mut[type][frag] = positions
+        end
       end
     end
     var_pos_mut

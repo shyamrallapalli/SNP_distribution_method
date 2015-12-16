@@ -1,46 +1,60 @@
 #encoding: utf-8
 require_relative '../lib/vcf'
+require_relative '../lib/file_rw'
 require 'test/unit'
+require 'bio-samtools'
+require 'yaml'
 
 class TestVcf < Test::Unit::TestCase
+
 	def setup
-		@vcf_ngs = "test/ngs.vcf"
-		@chromosome = 1
-		@vcfs_info = {"ADP"=>"17", "WT"=>"0", "HET"=>"1", "HOM"=>"0", "NC"=>"0"}, {"ADP"=>"25", "WT"=>"0", "HET"=>"1", "HOM"=>"0", "NC"=>"0"}
-		@vcfs_pos = [5, 123]
-		@snps = {5 => "HET", 123 => "HET"}
-		@vcf = ["1\t5\t.\tC\tA\t.\tPASS\tADP=17;WT=0;HET=1;HOM=0;NC=0\tGT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR\t0/1:24:17:17:9:7:41.18%:3.3988E-3:65:52:9:0:1:6\n", 
-		"1\t123\t.\tG\tA\t.\tPASS\tADP=25;WT=0;HET=1;HOM=0;NC=0\tGT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR\t0/1:39:25:25:14:11:44%:1.1933E-4:69:66:6:8:6:5\n"]
-    @vcf_file = "test/test.vcf"
-    @fasta_file = "test/test.fasta"
+		@vcf_ngs = 'data/ngs.vcf'
+    @vcf = []
+    File.open(@vcf_ngs, 'r').each do |line|
+      next if line =~ /^#/
+      @vcf << Bio::DB::Vcf.new(line)
+    end
+    @vars_pos = Vcf.get_vars(@vcf_ngs)
+    @fasta_file = 'data/test.fasta'
 	end
 
-  def test_get_vars
-    snp_data, hm, ht = Vcf.get_vars(@vcf_file)
-    assert_equal(["frag1", "frag1"], hm)
-    assert_equal(["frag2", "frag3"], ht)
-    assert_equal([["frag1", "frag1", "frag2", "frag3"], [7, 8, 2, 2], {"frag1" =>2, "frag2" =>1, "frag3" =>1}, [{"AF"=>"1.0"},{"AF"=>"1.0"},{"AF"=>"0.5"},{"AF"=>"0.5"}]], snp_data)
+	def test_get_allele_freq
+    vcf_obj = @vcf[0]
+		allele_freq = Vcf.get_allele_freq(vcf_obj)
+    assert_equal(0.4375, allele_freq)
+    vcf_obj = @vcf[1]
+    allele_freq = Vcf.get_allele_freq(vcf_obj)
+    assert_equal(0.44, allele_freq)
   end
 
-	def test_open_vcf
-		vcf, chrom, pos, info = Vcf.open_vcf(@vcf_ngs, @chromosome)
-		assert_equal( ["1\t5\t.\tC\tA\t.\tPASS\tADP=17;WT=0;HET=1;HOM=0;NC=0\tGT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR\t0/1:24:17:17:9:7:41.18%:3.3988E-3:65:52:9:0:1:6\n", 
-		"1\t123\t.\tG\tA\t.\tPASS\tADP=25;WT=0;HET=1;HOM=0;NC=0\tGT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR\t0/1:39:25:25:14:11:44%:1.1933E-4:69:66:6:8:6:5\n"], vcf)
-		assert_equal(["1", "1"], chrom)
-		assert_equal([5, 123], pos)
-		assert_equal( [{"ADP"=>"17", "WT"=>"0", "HET"=>"1", "HOM"=>"0", "NC"=>"0"}, {"ADP"=>"25", "WT"=>"0", "HET"=>"1", "HOM"=>"0", "NC"=>"0"}], info)
-	end
+  def test_get_vars
+    assert_kind_of(Hash, @vars_pos)
+    assert_equal({:het=>{'frag1'=>[5], 'frag3'=>[3]}}, @vars_pos)
+  end
 
-	def test_type_per_pos
-		snps, hm, ht = Vcf.type_per_pos(@vcfs_info, @vcfs_pos)
-		assert_equal({5 => "HET", 123 => "HET"}, snps)
-		assert_equal([], hm)
-		assert_equal([5, 123], ht)
-	end
+  def test_filtering
+    vcf_bg = 'data/ngs_bg.vcf'
+    vars_pos = Vcf.filtering(@vcf_ngs, vcf_bg)
+    assert_kind_of(Hash, vars_pos)
+    assert_equal({:het=>{'frag1'=>[5]}}, vars_pos)
+  end
 
-	def test_filtering
-		snps_p = {5 => "HET", 365 => "HOM"}
-		short_vcf = Vcf.filtering(@vcfs_pos, snps_p, @snps, @vcf)
-		assert_equal(["1\t123\t.\tG\tA\t.\tPASS\tADP=25;WT=0;HET=1;HOM=0;NC=0\tGT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR\t0/1:39:25:25:14:11:44%:1.1933E-4:69:66:6:8:6:5\n"], short_vcf)
-	end
+  def test_varpos_aggregate
+    seqs = FileRW.fasta_parse(@fasta_file)
+    details = Vcf.varpos_aggregate(@vars_pos, seqs[:len], %w(frag3 frag1), 0.5)
+    assert_kind_of(Hash, details)
+    assert_equal({'frag3'=>{:hm=>0.5, :ht=>1.5, :hm_pos=>[], :ht_pos=>[3], :ratio=>0.3333333333333333, :len=>8},
+                  'frag1'=>{:hm=>0.5, :ht=>1.5, :hm_pos=>[], :ht_pos=>[13], :ratio=>0.3333333333333333, :len=>11}},
+                 details)
+  end
+
+  def test_varpositions
+    outcome = YAML.load_file('data/outcome.yml')
+    hm, ht = Vcf.varpositions(outcome)
+    assert_kind_of(Array, hm)
+    assert_kind_of(Array, ht)
+    assert_equal([11057806, 11271450, 11431639, 11530279, 11729301, 11842973, 11908935, 12140542,
+                  12273646, 12361325, 12463499, 12683017, 12848989, 12869226, 12951951], hm)
+  end
+
 end
