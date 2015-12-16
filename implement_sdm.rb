@@ -115,11 +115,9 @@ Mutation.density_plot(outcome, average_contig.to_f, output_folder)
 
 ########## Test comparison inputs and analysis and comparison
 
-# #Open FASTA files containing the ordered contigs
-# #from the array take ids and lengths
-fasta_file = 'frags.fasta'
-inseq_ok = FileRW.fasta_parse(fasta_file)
-ids_ok = inseq_ok[:len].keys
+# open file containing the ordered fragment ids and add them to an array
+frags_order = pars['frags_order']
+ids_ok = FileRW.to_array(frags_order)
 
 original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
 

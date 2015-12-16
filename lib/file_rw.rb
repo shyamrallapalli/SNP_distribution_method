@@ -3,6 +3,13 @@ require 'bio'
 
 class FileRW
 
+
+  # Input: file location
+  # Output: array with each line of the file as an entry (strings)
+  def self.to_array(file)
+    IO.foreach(file).collect {|l| l.chomp }
+  end
+
   # Input 0: Filename by which to save an array with filetype extension, one value per line
   # Input 1: Array to save
   def self.write(filename, array)
