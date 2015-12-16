@@ -1,6 +1,7 @@
 # encoding: utf-8
 require 'bio'
 require 'bio-samtools'
+require 'bio-gngm'
 
 class Vcf
 
@@ -8,10 +9,11 @@ class Vcf
     allele_freq = 0
     # check if the vcf is from samtools (has DP4 and AF1 fields in INFO)
     if vcf_obj.info.key?('DP4')
-      freq = vcf_obj.info['DP4'].split(',')
-      depth = freq.inject { | sum, n | sum + n.to_f }
-      alt = freq[2].to_f + freq[3].to_f
-      allele_freq = alt / depth
+      # freq = vcf_obj.info['DP4'].split(',')
+      # depth = freq.inject { | sum, n | sum + n.to_f }
+      # alt = freq[2].to_f + freq[3].to_f
+      # allele_freq = alt / depth
+      allele_freq = vcf_obj.non_ref_allele_freq
     # check if the vcf has has AF fields in INFO
     elsif vcf_obj.info.key?('AF')
       allele_freq = vcf_obj.info['AF'].to_f
@@ -52,20 +54,22 @@ check that it is one sample vcf\n"
     File.open(vcf_file, 'r').each do |line|
       next if line =~ /^#/
       v = Bio::DB::Vcf.new(line)
-      allele_freq = get_allele_freq(v)
-      if allele_freq.between?(ht_low, ht_high)
-        if var_pos[:het].has_key?(v.chrom)
-          var_pos[:het][v.chrom] << v.pos
-        else
-          var_pos[:het][v.chrom] = []
-          var_pos[:het][v.chrom] << v.pos
-        end
-      elsif allele_freq > ht_high
-        if  var_pos[:hom].has_key?(v.chrom)
-          var_pos[:hom][v.chrom] << v.pos
-        else
-          var_pos[:hom][v.chrom] = []
-          var_pos[:hom][v.chrom] << v.pos
+      if v.variant?
+        allele_freq = get_allele_freq(v)
+        if allele_freq.between?(ht_low, ht_high)
+          if var_pos[:het].has_key?(v.chrom)
+            var_pos[:het][v.chrom] << v.pos
+          else
+            var_pos[:het][v.chrom] = []
+            var_pos[:het][v.chrom] << v.pos
+          end
+        elsif allele_freq > ht_high
+          if  var_pos[:hom].has_key?(v.chrom)
+            var_pos[:hom][v.chrom] << v.pos
+          else
+            var_pos[:hom][v.chrom] = []
+            var_pos[:hom][v.chrom] << v.pos
+          end
         end
       end
     end

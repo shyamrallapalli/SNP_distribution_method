@@ -1,7 +1,6 @@
 #encoding: utf-8
 require_relative 'file_rw'
 require_relative 'plot'
-require 'rinruby'
 require 'simple_stats'
 
 class Mutation
@@ -18,25 +17,7 @@ class Mutation
     positions.flatten!
   end
 
-  # Input 0: putative density from ratios
-  # Input 1: List of homozygous SNP positions
-  # Input 2: The number of equally spaced points at which the density is to be estimated. Specify n as a power of two.
-  # Output: get the highest kernel density value and returns closest homozygous SNP to the peak
-  def self.closest_snp(density, hm, n)
-    myr = RinRuby.new(:echo=>false)
-    myr.assign 'n', n
-    myr.assign 'data', density
-    myr.eval 'kernel_density <- density(data, n=n)'
-    # this only finds the first index with the max density if there is > 1
-    myr.eval 'index <- match(max(kernel_density$y),kernel_density$y)'
-    myr.eval 'peak <- kernel_density$x[index]'
-    peak = myr.pull 'peak'
-    myr.quit
-    peak.to_i
-    hm.min { |a, b| (peak - a).abs <=> (peak - b).abs }
-  end
-
-  # selected frags with likelyhood of carrying mutation
+  # selected frags with likelihood of carrying mutation
   # hash of fragments with variant positions
   # returns hash of candidate fragments with positions as values
   def self.get_candidates(frags, var_pos_hm)
