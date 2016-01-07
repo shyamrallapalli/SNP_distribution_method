@@ -11,6 +11,7 @@ require 'benchmark'
 require 'csv'
 require 'yaml'
 require 'fileutils'
+require 'bio-gngm'
 
 if ARGV.empty?
   puts "  Please specify a data set directory,\n\
@@ -62,7 +63,10 @@ end
 
 # ###[2] Open FASTA files containing the unordered contigs
 # #Create a hash with shuffled fragments seq ids - values are lengths and sequences
-inseq = FileRW.fasta_parse(fasta_shuffle)
+# inseq = FileRW.fasta_parse(fasta_shuffle)
+inseq = {}
+temp  = Bio::DB::FastaLengthDB.new(:file => fasta_shuffle)
+inseq[:len] = temp.instance_variable_get(:@seqs)
 ids = inseq[:len].keys
 genome_length = inseq[:len].values.inject { | sum, n | sum + n }
 average_contig = genome_length / ids.length
@@ -92,7 +96,7 @@ FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
 filename = "ordered_frags_thres#{threshold}.fasta"
-FileRW.write_order(sdm_frags, inseq[:seq], filename)
+FileRW.write_order(sdm_frags, fasta_shuffle, filename)
 
 region = average_contig * (sdm_frags.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"

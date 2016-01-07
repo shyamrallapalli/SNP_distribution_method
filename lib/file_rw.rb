@@ -1,5 +1,7 @@
 # encoding: utf-8
 require 'bio'
+require 'bio-samtools'
+require 'bio-gngm'
 
 class FileRW
 
@@ -39,12 +41,16 @@ class FileRW
   # Input2: sequences hash of frag ids and a filename to write
   # Output will be written to file and if no filename is given
   # output will be written to "ordered_frags.fasta"
-  def self.write_order(array, seqhash, filename='ordered_frags.fasta')
+  def self.write_order(array, fasta_file, filename='ordered_frags.fasta')
+    fasta_db = Bio::DB::Fasta::FastaFile.new({:fasta=>fasta_file})
+    samtools = fasta_db.instance_variable_get(:@samtools)
     File.open(filename, 'w+') do |f|
       array.each do |frag|
-        element = Bio::FastaFormat.new(seqhash[frag].to_s)
-        seqout = Bio::Sequence::NA.new(element.seq).upcase
-        f.puts seqout.to_fasta(element.definition, 80)
+        # element = Bio::FastaFormat.new(seqhash[frag].to_s)
+        # seqout = Bio::Sequence::NA.new(element.seq).upcase
+        # f.puts seqout.to_fasta(element.definition, 80)
+        command = "#{samtools} faidx #{fasta_file} \"#{frag}\""
+        f.puts `#{command}`
       end
     end
   end
