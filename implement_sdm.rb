@@ -119,33 +119,34 @@ Mutation.density_plot(outcome, average_contig.to_f, output_folder)
 
 ########## Test comparison inputs and analysis and comparison
 
-# open file containing the ordered fragment ids and add them to an array
-frags_order = pars['frags_order']
-ids_ok = FileRW.to_array(frags_order)
+if pars['test']
+  # open file containing the ordered fragment ids and add them to an array
+  frags_order = pars['frags_order']
+  ids_ok = FileRW.to_array(frags_order)
 
-original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
+  original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
 
 
-# #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-dic_ratios_inv  = RatioFilter.selected_ratios(original, threshold)
-File.open("#{log_folder}/t_10_dic_ratios_inv.yml", 'w') do |file|
-  file.write dic_ratios_inv.to_yaml
-end
-
-# delete fragments which are discarded via ratio selection
-selected_frags = dic_ratios_inv.values.flatten
-original.each_key do | fragid |
-  unless selected_frags.include?(fragid)
-    original.delete(fragid)
+  # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
+  dic_ratios_inv  = RatioFilter.selected_ratios(original, threshold)
+  File.open("#{log_folder}/t_10_dic_ratios_inv.yml", 'w') do |file|
+    file.write dic_ratios_inv.to_yaml
   end
-end
 
-File.open("#{log_folder}/t_13_original.yml", 'w') do |file|
-  file.write original.to_yaml
-end
-File.open("#{log_folder}/t_14_outcome.yml", 'w') do |file|
-  file.write outcome.to_yaml
-end
+  # delete fragments which are discarded via ratio selection
+  selected_frags = dic_ratios_inv.values.flatten
+  original.each_key do | fragid |
+    unless selected_frags.include?(fragid)
+      original.delete(fragid)
+    end
+  end
 
-Mutation.compare_density(outcome, mut_frags, average_contig.to_f, genome_length, output_folder,  original)
+  File.open("#{log_folder}/t_13_original.yml", 'w') do |file|
+    file.write original.to_yaml
+  end
+  File.open("#{log_folder}/t_14_outcome.yml", 'w') do |file|
+    file.write outcome.to_yaml
+  end
 
+  Mutation.compare_density(outcome, mut_frags, average_contig.to_f, genome_length, output_folder,  original)
+end

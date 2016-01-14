@@ -12,3 +12,4 @@ filter: 0
 ratio_adj: 0.5
 # cross is either back or out
 cross: out
+test: true
