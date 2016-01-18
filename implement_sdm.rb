@@ -12,6 +12,7 @@ require 'csv'
 require 'yaml'
 require 'fileutils'
 require 'bio-gngm'
+require 'bio-samtools'
 
 if ARGV.empty?
   puts "  Please specify a data set directory,\n\
@@ -32,6 +33,7 @@ FileUtils.cd("#{loc}")
 # filter parameter are to be read from a "input_pars.yml" file in the current folder
 pars = YAML.load_file('./input_pars.yml')
 fasta_shuffle = pars['fasta']
+bamfile = pars['bam']
 vcf_file = pars['vcf']
 adjust = pars['ratio_adj'].to_f
 threshold = pars['filter'].to_i
@@ -92,6 +94,26 @@ sdm_frags, mut_frags = Fragments.arrange(ratios_hash, cross, average_contig)
 FileRW.write_txt("#{log_folder}/4_3_perm_ratio", sdm_frags)
 FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 
+bam = Bio::DB::Sam.new(:bam=>bamfile, :fasta=>fasta_shuffle)
+bam.open
+sortfrags = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+mut_frags.each do | selfrag |
+  positions = input_frags[selfrag][:hm_pos]
+  positions.each do | mutpos |
+    bam.mpileup(:r => "#{selfrag}:#{mutpos}-#{mutpos}", :Q => 20, :q => 20) do |pileup|
+      ratio = 0
+      if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
+      # if defined? pileup.non_ref_count
+        ratio = pileup.non_ref_count/pileup.coverage
+      end
+      warn "#{selfrag}\t#{mutpos}\t#{pileup}\t#{ratio}\n"
+      sortfrags[ratio][selfrag][mutpos] = 1
+    end
+  end
+end
+File.open("#{log_folder}/4_1_sortfrags.yml", 'w') do |file|
+  file.write sortfrags.to_yaml
+end
 
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
