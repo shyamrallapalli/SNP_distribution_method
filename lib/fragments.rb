@@ -117,16 +117,21 @@ class Fragments
     cutoff = min + (range/thres)
 
     # delete fragments which are below selected cutoff ratio
-    frags_to_delete = []
+    frags_to_keep = []
     ratios_hash.each_key { | ratio |
-      if ratio < cutoff
-        frags_to_delete << ratios_hash[ratio]
+      if ratio >= cutoff
+        frags_to_keep << ratios_hash[ratio]
       end
     }
-    frags_to_delete.flatten!
+    frags_to_keep.flatten!
 
-    perm.delete_if { |id| frags_to_delete.include?(id) }
-    perm
+    mutfrags = []
+    perm.each do |id|
+      if frags_to_keep.include?(id)
+        mutfrags << id
+      end
+    end
+    mutfrags
   end
 
 end
