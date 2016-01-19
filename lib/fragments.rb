@@ -101,4 +101,32 @@ class Fragments
     [perm, mut]
   end
 
+  def self.select_fragments(cross, ratios_hash, perm, adjust, threshold)
+
+    # set minimum cut off ratio to pick fragments with variants
+    # calculate min ratio for back or out crossed data
+    # and apply any threshold use applied
+    if cross == 'back'
+      min = (1.0/adjust) + 1.0
+    else
+      min = 2 * ((1/adjust) + 1)
+    end
+    maximum = ratios_hash.keys.max.to_f
+    range = maximum - min
+    thres = 100.0/threshold.to_f
+    cutoff = min + (range/thres)
+
+    # delete fragments which are below selected cutoff ratio
+    frags_to_delete = []
+    ratios_hash.each_key { | ratio |
+      if ratio < cutoff
+        frags_to_delete << ratios_hash[ratio]
+      end
+    }
+    frags_to_delete.flatten!
+
+    perm.delete_if { |id| frags_to_delete.include?(id) }
+    perm
+  end
+
 end
