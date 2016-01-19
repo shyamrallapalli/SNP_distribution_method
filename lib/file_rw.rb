@@ -42,15 +42,17 @@ class FileRW
   # Output will be written to file and if no filename is given
   # output will be written to "ordered_frags.fasta"
   def self.write_order(array, fasta_file, filename='ordered_frags.fasta')
-    fasta_db = Bio::DB::Fasta::FastaFile.new({:fasta=>fasta_file})
-    samtools = fasta_db.instance_variable_get(:@samtools)
+    sequences = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    Bio::FastaFormat.open(fasta_file).each do |inseq|
+      sequences[inseq.entry_id] = inseq.entry
+    end
     File.open(filename, 'w+') do |f|
       array.each do |frag|
-        # element = Bio::FastaFormat.new(seqhash[frag].to_s)
-        # seqout = Bio::Sequence::NA.new(element.seq).upcase
-        # f.puts seqout.to_fasta(element.definition, 80)
-        command = "#{samtools} faidx #{fasta_file} \"#{frag}\""
-        f.puts `#{command}`
+        element = Bio::FastaFormat.new(sequences[frag].to_s)
+        seqout = Bio::Sequence::NA.new(element.seq).upcase
+        f.puts seqout.to_fasta(element.definition, 80)
+        #command = "#{samtools} faidx #{fasta_file} \"#{frag}\""
+        #f.puts `#{command}`
       end
     end
   end
