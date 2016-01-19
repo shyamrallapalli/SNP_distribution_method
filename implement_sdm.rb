@@ -135,8 +135,17 @@ outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], sdm_frags, adjust)
 # #Plot expected vs SDM ratios, QQplots
 candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
 File.open("#{output_folder}/mutation.txt", 'w+') do |f|
-  f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
-  f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
+  # f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
+  # f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
+  f.puts "non_ref_ratio\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
+  sortfrags.keys.sort.reverse.each do | ratio_1 |
+    sortfrags[ratio_1].each_key do | frag_1 |
+      sortfrags[ratio_1][frag_1].each_key do | pos_1 |
+        pileup = sortfrags[ratio_1][frag_1][pos_1].to_s
+        f.puts "#{ratio_1}\t#{pileup}"
+      end
+    end
+  end
 end
 
 Mutation.density_plot(outcome, average_contig.to_f, output_folder)
