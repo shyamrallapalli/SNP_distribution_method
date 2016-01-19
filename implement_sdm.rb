@@ -94,24 +94,27 @@ sdm_frags, mut_frags = Fragments.arrange(ratios_hash, cross, average_contig)
 FileRW.write_txt("#{log_folder}/4_3_perm_ratio", sdm_frags)
 FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 
+sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, threshold)
+FileRW.write_txt("#{log_folder}/4_5_selected_frags", sel_frags)
+mut_frags = sel_frags
+
 bam = Bio::DB::Sam.new(:bam=>bamfile, :fasta=>fasta_shuffle)
 bam.open
 sortfrags = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-mut_frags.each do | selfrag |
+sel_frags.each do | selfrag |
   positions = input_frags[selfrag][:hm_pos]
   positions.each do | mutpos |
-    bam.mpileup(:r => "#{selfrag}:#{mutpos}-#{mutpos}", :Q => 20, :q => 20) do |pileup|
+    bam.mpileup(:r => "#{selfrag}:#{mutpos}-#{mutpos}", :Q => 15, :q => 20) do |pileup|
       ratio = 0
       if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
       # if defined? pileup.non_ref_count
         ratio = pileup.non_ref_count/pileup.coverage
       end
-      warn "#{selfrag}\t#{mutpos}\t#{pileup}\t#{ratio}\n"
-      sortfrags[ratio][selfrag][mutpos] = 1
+      sortfrags[ratio][selfrag][mutpos] = pileup
     end
   end
 end
-File.open("#{log_folder}/4_1_sortfrags.yml", 'w') do |file|
+File.open("#{log_folder}/4_6_sortfrags.yml", 'w') do |file|
   file.write sortfrags.to_yaml
 end
 
