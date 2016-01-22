@@ -66,38 +66,7 @@ class Fragments
 
     # combine together both sides of the distribution
     perm = left + right
-
-    # check which of right or left are smaller array
-    rlen = right.length
-    llen = left.length
-    smaller = rlen <= llen ? right : left
-    num = smaller.length
-
-    mut = []
-    if average_contig.to_i < 10000
-      # In case of a back-cross, 20 contigs in the middle part of the permutation taken
-      if cross == 'back'
-        if num > 10
-          mut = left[-10, 10] + right[0, 10]
-        else
-          mut = left[-llen, llen] + right[0, rlen]
-        end
-      # In case of a out-cross, 40 contigs in the middle part of the permutation taken
-      elsif cross == 'out'
-        if num > 20
-          mut = left[-20, 20] + right[0, 20]
-        # If a strong filtering step reduces the total number of contigs to a number lower than 20,
-        # perm.length/2 contigs on the right and perm.length/2 on the left side of the middle point are taken.
-        else
-          mut = left[-llen, llen] + right[0, rlen]
-        end
-      end
-    else
-      if num > 6
-          num = 6
-      end
-      mut = left[-num, num] + right[0, num]
-    end
+    mut = Fragments.select_frags_old(left, right, average_contig, cross)
     [perm, mut]
   end
 
@@ -132,6 +101,41 @@ class Fragments
       end
     end
     mutfrags
+  end
+
+  def self.select_frags_old(left, right, average_contig, cross)
+    # check which of right or left are smaller array
+    rlen = right.length
+    llen = left.length
+    smaller = rlen <= llen ? right : left
+    num = smaller.length
+
+    mut = []
+    if average_contig.to_i < 10000
+      # In case of a back-cross, 20 contigs in the middle part of the permutation taken
+      if cross == 'back'
+        if num > 10
+          mut = left[-10, 10] + right[0, 10]
+        else
+          mut = left[-llen, llen] + right[0, rlen]
+        end
+      # In case of a out-cross, 40 contigs in the middle part of the permutation taken
+      elsif cross == 'out'
+        if num > 20
+          mut = left[-20, 20] + right[0, 20]
+        # If a strong filtering step reduces the total number of contigs to a number lower than 20,
+        # perm.length/2 contigs on the right and perm.length/2 on the left side of the middle point are taken.
+        else
+          mut = left[-llen, llen] + right[0, rlen]
+        end
+      end
+    else
+      if num > 6
+          num = 6
+      end
+      mut = left[-num, num] + right[0, num]
+    end
+    mut
   end
 
 end
