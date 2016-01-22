@@ -109,7 +109,7 @@ class Fragments
     if cross == 'back'
       min = (1.0/adjust) + 1.0
     else
-      min = 2 * ((1/adjust) + 1)
+      min = (2.0/adjust) + 1.0
     end
     maximum = ratios_hash.keys.max.to_f
     range = maximum - min
