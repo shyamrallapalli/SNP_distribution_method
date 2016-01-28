@@ -32,10 +32,10 @@ class Plot
     options(scipen = 10)
     x <- experimental
     y <- rnorm(length(x), mean(x), sd(x))
-    df <- data.frame(x, y)
+    # df <- data.frame(x, y)
     V = qqplot(x, y, main=title, ylab=ylabel, xlab =xlabel)
     l <- qqline2(x, y, col = 6)
-    fg <- data.frame(V$x, V$y)
+    # fg <- data.frame(V$x, V$y)
     k <- lm(V$y ~ V$x)
     len <- leg_r2(k)
     dev.off()'
@@ -47,20 +47,23 @@ class Plot
     myr.assign 'hm', hm
     myr.assign 'ht', ht
     myr.assign 'ratio', ratio
-    myr.assign 'length', length
+    # myr.assign 'length', length
     myr.assign 'dir', dir
-    myr.eval 'png(paste(dir,"/", "experimental densities",".png", sep=""), width=800,height=500)
+    myr.eval 'png(paste(dir,"/", "experimental_densities",".png", sep=""), width=800, height=500)
     options(scipen = 10)
-    d1 <-density(hm, adjust = 1, kernel = c("gaussian"))
+    d1 <- density(hm, adjust = 1, kernel = c("gaussian"))
     d2 <- density(ht, adjust = 1, kernel = c("gaussian"))
     d3 <- density(ratio, adjust =1 , kernel = c("gaussian"))
-    p1 <- plot(range(d1$x, d2$x, d3$x), range(d1$y, d2$y, d3$y), type = "n",
-      main = "Densities", xlim =c(0,length), xlab = " ", ylab = " ")
-    lines(d1, col = "magenta2") ##Homozygous
-    lines(d2, col = "royalblue2", lty=2)
-    lines(d3, col = "gray46", lwd =5)
+    # limit the plot on x-axis based on variant position spread
+    length <- range(hm, ht, ratio)
+    plot(range(d1$x, d2$x, d3$x), range(d1$y, d2$y, d3$y), type = "n",
+      xlim =c(length[1], length[2]), xlab = "variant position", ylab = "densities")
+    lines(d1, col = "magenta2") ## Homozygous
+    lines(d2, col = "royalblue2", lty=2) ## Heterozygous
+    lines(d3, col = "gray46", lwd =5) ## Homozygous/Heterozygous ratio
+    axis(3, at=c(length[1], length[1]+diff(length)/2, length[2]), labels=c(1, diff(length)/2, diff(length)) )
     legend("topright",col=c("magenta2", "royalblue2", "grey46"),lwd=1,lty=1:2,
-      legend=c("Homozygous SNP density","Heterozygous SNP density", "Hom/het ratio"), bty="n")
+      legend=c("Homozygous SNP density","Heterozygous SNP density", "Hom/Het ratio"), bty="n")
     dev.off()'
     myr.quit
   end
