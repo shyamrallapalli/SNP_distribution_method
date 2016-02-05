@@ -2,6 +2,7 @@
 # and pararmeters needed for sdm running
 fasta: 'frags_shuffled.fasta'
 vcf: 'snps.vcf'
+background: ''
 # name prefix for output and log directories
 outdir: 'sdm_out'
 logdir: 'sdm_log'

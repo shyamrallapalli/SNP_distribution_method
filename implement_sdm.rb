@@ -35,6 +35,7 @@ pars = YAML.load_file('./input_pars.yml')
 fasta_shuffle = pars['fasta']
 bamfile = pars['bam']
 vcf_file = pars['vcf']
+background = pars['background']
 adjust = pars['ratio_adj'].to_f
 threshold = pars['filter'].to_i
 cross = pars['cross']
@@ -58,7 +59,11 @@ puts "A factor of #{adjust} will be used to calculate the ratio"
 
 
 # ###[1] Open VCF file
-var_pos = Vcf.get_vars(vcf_file)
+if background == ''
+  var_pos = Vcf.get_vars(vcf_file)
+else
+  var_pos = Vcf.filtering(vcf_file, background)
+end
 File.open("#{log_folder}/1_4_frag_pos.yml", 'w') do |file|
   file.write var_pos.to_yaml
 end
