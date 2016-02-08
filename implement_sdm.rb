@@ -113,7 +113,7 @@ sel_frags.each do | selfrag |
       ratio = 0
       if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
       # if defined? pileup.non_ref_count
-        ratio = pileup.non_ref_count/pileup.coverage
+        ratio = 1.0 - (pileup.ref_count/pileup.coverage)
       end
       sortfrags[ratio][selfrag][mutpos] = pileup
     end
