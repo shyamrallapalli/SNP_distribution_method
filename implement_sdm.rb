@@ -5,6 +5,7 @@ require_relative 'lib/mutation'
 require_relative 'lib/ratio_filter'
 require_relative 'lib/fragments'
 require_relative 'lib/vcf'
+require_relative 'lib/Pileup'
 
 require 'pp'
 require 'benchmark'
@@ -103,22 +104,7 @@ sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, th
 FileRW.write_txt("#{log_folder}/4_5_selected_frags", sel_frags)
 mut_frags = sel_frags
 
-bam = Bio::DB::Sam.new(:bam=>bamfile, :fasta=>fasta_shuffle)
-bam.open
-sortfrags = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-sel_frags.each do | selfrag |
-  positions = input_frags[selfrag][:hm_pos]
-  positions.each do | mutpos |
-    bam.mpileup(:r => "#{selfrag}:#{mutpos}-#{mutpos}", :Q => 15, :q => 20) do |pileup|
-      ratio = 0
-      if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
-      # if defined? pileup.non_ref_count
-        ratio = 1.0 - (pileup.ref_count/pileup.coverage)
-      end
-      sortfrags[ratio][selfrag][mutpos] = pileup
-    end
-  end
-end
+sortfrags = Pileup.pick_frag_vars(bamfile,fasta_shuffle,sel_frags,input_frags)
 File.open("#{log_folder}/4_6_sortfrags.yml", 'w') do |file|
   file.write sortfrags.to_yaml
 end
@@ -138,7 +124,7 @@ outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], sdm_frags, adjust)
 # ###[6] Plots
 
 # #Plot expected vs SDM ratios, QQplots
-candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
+# candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
 File.open("#{output_folder}/mutation.txt", 'w+') do |f|
   # f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
   # f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
