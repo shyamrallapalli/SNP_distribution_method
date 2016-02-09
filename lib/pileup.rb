@@ -5,6 +5,39 @@ require 'bio-gngm'
 
 class Pileup
 
+  # count bases from indels
+  # array of pileup bases is split at + / -
+  # and number after each indel is counted
+  def self.count_indels(array)
+    number = 0
+    array.shift
+    array.each do |element|
+      num = /^(\d+)[atgcATGC]/.match(element)[1].to_i
+      number += num
+    end
+    number
+  end
+
+  # count bases matching reference and non-reference
+  # and calculate ratio of non_ref allele to total bases
+  def self.get_nonref_ratio(pileup)
+    pileupinfo = pileup.to_s.split(/\t/)
+    ref_count = pileupinfo[4].count('.,')
+    basecounts = pileupinfo[4].count('atgcATGC')
+    non_ref_count = basecounts
+    if pileupinfo[4] =~ /\+/
+      pluscounts = pileupinfo[4].count('+')
+      indel_bases = count_indels(pileupinfo[4].split('+'))
+      non_ref_count = basecounts + pluscounts - indel_bases
+    elsif pileupinfo[4] =~ /\-/
+      minuscounts = pileupinfo[4].count('-')
+      indel_bases = count_indels(pileupinfo[4].split('-'))
+      non_ref_count = basecounts + minuscounts - indel_bases
+    end
+    ratio = non_ref_count.to_f / (ref_count.to_f + non_ref_count.to_f)
+    ratio
+  end
+
   def self.pick_frag_vars(bamfile,infasta,keyfrags,input_frags)
     bam = Bio::DB::Sam.new(:bam=>bamfile, :fasta=>infasta)
     bam.open
@@ -18,8 +51,7 @@ class Pileup
         end
         pileup = pileups[0]
         if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
-          # ratio = 1.0 - (pileup.ref_count/pileup.coverage)
-          ratio = pileup.non_ref_count/pileup.coverage
+          ratio = get_nonref_ratio(pileup)
           sortfrags[ratio][selfrag][mutpos] = pileup
         end
       end
