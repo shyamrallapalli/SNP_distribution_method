@@ -75,11 +75,15 @@ class Pileup
     # and check if the pileup information has zeros and change position info
     # to get upstream position pileup information
     pos_diff = initial_pos - pos1
-    if pileuparray[0].to_s =~ /^\t0/ and pos_diff <= 10
+    if pileuparray[0].to_s =~ /^\t0/ and pos_diff <= 10 and pos1 > 1
       pos1 = pos1 - 1
       pileuparray = get_pileup(bamobject,id,pos1)
     # if the difference is larger than 10 bp then set up pileup information as null
     elsif pileuparray[0].to_s =~ /^\t0/ and pos_diff > 10
+      pileuparray = []
+    # might be best to increase the number to 25 instead of 1
+    # to reduce possible errors in variant calls at ends of sequences
+    elsif pos1 == 1
       pileuparray = []
     end
     pileuparray

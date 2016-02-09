@@ -5,7 +5,7 @@ require_relative 'lib/mutation'
 require_relative 'lib/ratio_filter'
 require_relative 'lib/fragments'
 require_relative 'lib/vcf'
-require_relative 'lib/Pileup'
+require_relative 'lib/pileup'
 
 require 'pp'
 require 'benchmark'
