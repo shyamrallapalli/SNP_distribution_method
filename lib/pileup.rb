@@ -7,7 +7,7 @@ class Pileup
 
   # count bases from indels
   # array of pileup bases is split at + / -
-  # and number after each indel is counted
+  # and number after each + / - is counted
   def self.count_indels(array)
     number = 0
     array.shift
@@ -20,18 +20,38 @@ class Pileup
 
   # count bases matching reference and non-reference
   # and calculate ratio of non_ref allele to total bases
+  def self.read_base_hash(pileup)
+    bases_hash = {}
+    read_bases = pileup.instance_variable_get(:@read_bases)
+    # ref_base = pileup.instance_variable_get(:@ref_base)
+    # read_bases.gsub!(/[.,]/, ref_base)
+    if read_bases =~ /\+/
+      return bases_hash
+    elsif read_bases =~ /\-/
+      return bases_hash
+    else
+      bases_hash[:A] = read_bases.count('aA')
+      bases_hash[:C] = read_bases.count('cC')
+      bases_hash[:G] = read_bases.count('gG')
+      bases_hash[:T] = read_bases.count('tT')
+    end
+    bases_hash
+  end
+
+  # count bases matching reference and non-reference
+  # and calculate ratio of non_ref allele to total bases
   def self.get_nonref_ratio(pileup)
-    pileupinfo = pileup.to_s.split(/\t/)
-    ref_count = pileupinfo[4].count('.,')
-    basecounts = pileupinfo[4].count('atgcATGC')
+    read_bases = pileup.instance_variable_get(:@read_bases)
+    ref_count = read_bases.count('.,')
+    basecounts = read_bases.count('atgcATGC')
     non_ref_count = basecounts
-    if pileupinfo[4] =~ /\+/
-      pluscounts = pileupinfo[4].count('+')
-      indel_bases = count_indels(pileupinfo[4].split('+'))
+    if read_bases =~ /\+/
+      pluscounts = read_bases.count('+')
+      indel_bases = count_indels(read_bases.split('+'))
       non_ref_count = basecounts + pluscounts - indel_bases
-    elsif pileupinfo[4] =~ /\-/
-      minuscounts = pileupinfo[4].count('-')
-      indel_bases = count_indels(pileupinfo[4].split('-'))
+    elsif read_bases =~ /\-/
+      minuscounts = read_bases.count('-')
+      indel_bases = count_indels(read_bases.split('-'))
       non_ref_count = basecounts + minuscounts - indel_bases
     end
     ratio = non_ref_count.to_f / (ref_count.to_f + non_ref_count.to_f)
@@ -51,6 +71,7 @@ class Pileup
         end
         pileup = pileups[0]
         if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
+          base_hash = read_base_hash(pileup)
           ratio = get_nonref_ratio(pileup)
           sortfrags[ratio][selfrag][mutpos] = pileup
         end
