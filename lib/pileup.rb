@@ -19,17 +19,19 @@ class Pileup
   end
 
   # count bases matching reference and non-reference
-  # and calculate ratio of non_ref allele to total bases
+  # from snp variant and make a hash of bases with counts
+  # for indels return the read bases information instead
   def self.read_base_hash(pileup)
     bases_hash = {}
     read_bases = pileup.instance_variable_get(:@read_bases)
     # ref_base = pileup.instance_variable_get(:@ref_base)
     # read_bases.gsub!(/[.,]/, ref_base)
     if read_bases =~ /\+/
-      return bases_hash
+      return read_bases
     elsif read_bases =~ /\-/
-      return bases_hash
+      return read_bases
     else
+      bases_hash[:ref] = read_bases.count('.,')
       bases_hash[:A] = read_bases.count('aA')
       bases_hash[:C] = read_bases.count('cC')
       bases_hash[:G] = read_bases.count('gG')
@@ -40,19 +42,18 @@ class Pileup
 
   # count bases matching reference and non-reference
   # and calculate ratio of non_ref allele to total bases
-  def self.get_nonref_ratio(pileup)
-    read_bases = pileup.instance_variable_get(:@read_bases)
+  def self.get_nonref_ratio(read_bases)
     ref_count = read_bases.count('.,')
     basecounts = read_bases.count('atgcATGC')
     non_ref_count = basecounts
     if read_bases =~ /\+/
       pluscounts = read_bases.count('+')
       indel_bases = count_indels(read_bases.split('+'))
-      non_ref_count = basecounts + pluscounts - indel_bases
+      non_ref_count += pluscounts - indel_bases
     elsif read_bases =~ /\-/
       minuscounts = read_bases.count('-')
       indel_bases = count_indels(read_bases.split('-'))
-      non_ref_count = basecounts + minuscounts - indel_bases
+      non_ref_count += minuscounts - indel_bases
     end
     ratio = non_ref_count.to_f / (ref_count.to_f + non_ref_count.to_f)
     ratio
@@ -71,8 +72,8 @@ class Pileup
         end
         pileup = pileups[0]
         if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
-          base_hash = read_base_hash(pileup)
-          ratio = get_nonref_ratio(pileup)
+          read_bases = pileup.instance_variable_get(:@read_bases)
+          ratio = get_nonref_ratio(read_bases)
           sortfrags[ratio][selfrag][mutpos] = pileup
         end
       end
