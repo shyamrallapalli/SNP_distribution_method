@@ -5,6 +5,9 @@ require 'bio-gngm'
 
 class Polyploid
 
+  # getting vars from vcf file
+  # each var is checked using pileup information from bam file
+  # added to a hash to return
   def self.vars_in_file(vcf_file, bamfile, fastafile)
     # hash of frag ids with respective variant positions and their base hash info
     # only snps have base hash info and indels base hash is empty
@@ -18,26 +21,27 @@ class Polyploid
     File.open(vcf_file, 'r').each do |line|
       next if line =~ /^#/
       v = Bio::DB::Vcf.new(line)
-      if v.variant?
+      # some variant callers like Freebays are including some non variants as vars
+      # so check ref and alt differ
+      if v.variant? and v.ref != v.alt
         pileups = Pileup.get_pileup(bam,v.chrom,v.pos)
-        if pileups.empty?
-          next
-        end
-        pileup = pileups[0]
-        basehash = Pileup.read_base_hash(pileup)
+        next if pileups.empty?
+        basehash = Pileup.read_base_hash(pileups[0])
         vars_hash[v.chrom][v.pos] = basehash
       end
     end
     vars_hash
   end
 
+  # form hash of base information, [ATGC] counts for snp
+  # a hash of base proportion is calculated
+  # base proportion hash below a selected depth is empty
+  # base proportion below or equal to a noise factor are discarded
   def self.get_base_freq(hash, depth, noise)
     snp_hash = {}
     coverage = hash.values.inject { | sum, n | sum + n.to_f }
-    if coverage < depth
-      return snp_hash
-    end
-
+    return snp_hash if coverage < depth
+    # calculate proportion of each base in coverage
     hash.each_key do | base |
       next if base == :ref
       freq = data[base].to_f/coverage
@@ -47,6 +51,8 @@ class Polyploid
     snp_hash
   end
 
+  # calculate var zygosity for non-polyploid variants
+  # increased range is used for heterozygosity for RNA-seq data
   def self.var_mode(ratio, ht_low = 0.10, ht_high = 0.90)
     mode = ''
     if ratio.between?(ht_low, ht_high)
