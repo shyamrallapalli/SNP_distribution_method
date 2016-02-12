@@ -33,7 +33,7 @@ FileUtils.cd("#{loc}")
 #### Inputs
 ### sequences and variants from the shuffled genome
 # filter parameter are to be read from a "input_pars.yml" file in the current folder
-pars = YAML.load_file('./input_pars.yml')
+pars = YAML.load_file("#{loc}/input_pars.yml")
 fasta_shuffle = pars['fasta']
 mut_vcf = pars['mut_vcf']
 mut_bam = pars['mut_bam']
