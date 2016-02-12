@@ -64,16 +64,30 @@ class Polyploid
   end
 
 
-  def self.push_base_hash(base_hash, store_hash, frag, pos)
+  def self.push_base_hash(base_hash, store_hash, frag, pos, background='')
+    # we are only dealing with single element hashes
     if base_hash.keys.length > 1
-      warn "#{frag}\t#{pos}\t#{base_hash}\n"
+      warn "#{frag}\t#{pos}\t#{base_hash}\t#{background}\n"
       return store_hash
     end
-    mut_type = var_mode(base_hash[base_hash.keys[0]])
-    store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+    base = base_hash.keys[0]
+    if background == ''
+      mut_type = var_mode(base_hash[base])
+      store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+    else
+      if background.key?(base)
+        mut_type = var_mode(base_hash[base])
+        bg_type = var_mode(background[base])
+        # if both have the same base type then return original hash
+        return store_hash if mut_type == bg_type
+        store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+      else
+        mut_type = var_mode(base_hash[base])
+        store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+      end
+    end
     store_hash
   end
-
 
   def self.filter_vars(vars_hash_mut, vars_hash_bg, depth=6, noise=0.1)
     vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
@@ -86,26 +100,9 @@ class Polyploid
           data2 = vars_hash_bg[frag][pos]
           if data1.instance_of? Hash
             mut_bases = get_base_freq(data1, depth, noise)
-            reps = mut_bases.length
             if data2.instance_of? Hash
               bg_bases = get_base_freq(data2, depth, noise)
-              if reps == 1
-                base = mut_bases.keys[0]
-                if bg_bases.key?(base)
-                  mut_type = var_mode(mut_bases[base])
-                  bg_type = var_mode(bg_bases[base])
-                  if mut_type == bg_type
-                    next
-                  else
-                    vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
-                  end
-                else
-                  mut_type = var_mode(mut_bases[base])
-                  vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
-                end
-              else
-                warn "#{frag}\t#{pos}\t#{mut_bases}\t#{bg_bases}\n"
-              end
+              vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos, bg_bases)
             else
               vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
             end
@@ -115,11 +112,8 @@ class Polyploid
             if data2.instance_of? String
               bg_ratio = Pileup.get_nonref_ratio(data2)
               bg_type = var_mode(bg_ratio)
-              if mut_type == bg_type
-                next
-              else
-                vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
-              end
+              next if mut_type == bg_type
+              vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
             else
               vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
             end
@@ -139,7 +133,7 @@ class Polyploid
         end
       end
     end
-    vars_hash_mut
+    vars_hash
   end
 
 end
