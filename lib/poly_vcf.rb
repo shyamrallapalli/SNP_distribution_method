@@ -63,6 +63,18 @@ class Polyploid
     mode
   end
 
+
+  def self.push_base_hash(base_hash, store_hash, frag, pos)
+    if base_hash.keys.length > 1
+      warn "#{frag}\t#{pos}\t#{base_hash}\n"
+      return store_hash
+    end
+    mut_type = var_mode(base_hash[base_hash.keys[0]])
+    store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+    store_hash
+  end
+
+
   def self.filter_vars(vars_hash_mut, vars_hash_bg, depth=6, noise=0.1)
     vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     vars_hash_mut.each_key do | frag |
@@ -95,12 +107,7 @@ class Polyploid
                 warn "#{frag}\t#{pos}\t#{mut_bases}\t#{bg_bases}\n"
               end
             else
-              if reps == 1
-                mut_type = var_mode(mut_bases[mut_bases.keys[0]])
-                vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
-              else
-                warn "#{frag}\t#{pos}\t#{mut_bases}\t#{bg_bases}\n"
-              end
+              vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
             end
           elsif data1.instance_of? String
             mut_ratio = Pileup.get_nonref_ratio(data1)
@@ -122,12 +129,7 @@ class Polyploid
           # var is snp
           if data1.instance_of? Hash
             mut_bases = get_base_freq(data1, depth, noise)
-            if mut_bases.length == 1
-              mut_type = var_mode(mut_bases[mut_bases.keys[0]])
-              vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
-            else
-              warn "#{frag}\t#{pos}\t#{mut_bases}\n"
-            end
+            vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
           # var is indel
           elsif data1.instance_of? String
             mut_ratio = Pileup.get_nonref_ratio(data1)
