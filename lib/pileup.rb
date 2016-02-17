@@ -21,11 +21,8 @@ class Pileup
   # count bases matching reference and non-reference
   # from snp variant and make a hash of bases with counts
   # for indels return the read bases information instead
-  def self.read_base_hash(pileup)
+  def self.read_base_hash(read_bases)
     bases_hash = {}
-    read_bases = pileup.instance_variable_get(:@read_bases)
-    # ref_base = pileup.instance_variable_get(:@ref_base)
-    # read_bases.gsub!(/[.,]/, ref_base)
     if read_bases =~ /\+/
       return read_bases
     elsif read_bases =~ /\-/
