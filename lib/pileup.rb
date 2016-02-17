@@ -8,7 +8,8 @@ class Pileup
   # count bases from indels
   # array of pileup bases is split at + / -
   # and number after each + / - is counted
-  def self.count_indels(array)
+  def self.count_indels(read_bases, delimiter)
+    array = read_bases.split(delimiter)
     number = 0
     array.shift
     array.each do |element|
@@ -45,11 +46,11 @@ class Pileup
     non_ref_count = basecounts
     if read_bases =~ /\+/
       pluscounts = read_bases.count('+')
-      indel_bases = count_indels(read_bases.split('+'))
+      indel_bases = count_indels(read_bases, '+')
       non_ref_count += pluscounts - indel_bases
     elsif read_bases =~ /\-/
       minuscounts = read_bases.count('-')
-      indel_bases = count_indels(read_bases.split('-'))
+      indel_bases = count_indels(read_bases, '-')
       non_ref_count += minuscounts - indel_bases
     end
     ratio = non_ref_count.to_f / (ref_count.to_f + non_ref_count.to_f)
@@ -70,6 +71,9 @@ class Pileup
         pileup = pileups[0]
         if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
           read_bases = pileup.instance_variable_get(:@read_bases)
+          # mapping quality after '^' symbol is substituted
+          # to avoid splitting at non indel + or - characters
+          read_bases.gsub!(/\^./, '')
           ratio = get_nonref_ratio(read_bases)
           sortfrags[ratio][selfrag][mutpos] = pileup
         end
