@@ -59,7 +59,8 @@ class Polyploid
 
   def self.push_base_hash(base_hash, store_hash, frag, pos, background='')
     # we are only dealing with single element hashes
-    if base_hash.keys.length > 1
+    # so discard hashes with more than one element and empty hashes
+    if base_hash.length > 1 or base_hash.empty?
       warn "#{frag}\t#{pos}\t#{base_hash}\t#{background}\n"
       return store_hash
     end
