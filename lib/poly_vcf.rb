@@ -17,7 +17,7 @@ class Polyploid
     File.open(pileupfile, 'r').each do |line|
       pileup = Bio::DB::Pileup.new(line)
       if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3) and pileup.consensus != pileup.ref_base
-        read_bases = pileup.instance_variable_get(:@read_bases)
+        read_bases = Pileup.get_read_bases(pileup)
         basehash = Pileup.read_base_hash(read_bases)
         vars_hash[pileup.ref_name][pileup.pos] = basehash
         # puts "#{pileup.ref_name}\t#{pileup.pos}\t#{pileup.consensus}\t#{basehash}\n"
@@ -88,7 +88,8 @@ class Polyploid
     File.open(mut_pileup, 'r').each do |line|
       pileup = Bio::DB::Pileup.new(line)
       if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3) and pileup.consensus != pileup.ref_base
-        data1 = Pileup.read_base_hash(pileup)
+        read_bases = Pileup.get_read_bases(pileup)
+        data1 = Pileup.read_base_hash(read_bases)
         frag = pileup.ref_name
         pos = pileup.pos
         if data1.instance_of? Hash

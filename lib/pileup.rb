@@ -19,6 +19,16 @@ class Pileup
     number
   end
 
+  # get read bases from pileup object
+  # removes mapping quality information
+  def self.get_read_bases(pileup)
+    read_bases = pileup.instance_variable_get(:@read_bases)
+    # mapping quality after '^' symbol is substituted
+    # to avoid splitting at non indel + or - characters
+    read_bases.gsub!(/\^./, '')
+    read_bases
+  end
+
   # count bases matching reference and non-reference
   # from snp variant and make a hash of bases with counts
   # for indels return the read bases information instead
@@ -70,10 +80,7 @@ class Pileup
         end
         pileup = pileups[0]
         if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
-          read_bases = pileup.instance_variable_get(:@read_bases)
-          # mapping quality after '^' symbol is substituted
-          # to avoid splitting at non indel + or - characters
-          read_bases.gsub!(/\^./, '')
+          read_bases = get_read_bases(pileup)
           ratio = get_nonref_ratio(read_bases)
           sortfrags[ratio][selfrag][mutpos] = pileup
         end
