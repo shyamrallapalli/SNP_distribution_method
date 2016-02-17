@@ -34,11 +34,12 @@ FileUtils.cd("#{loc}")
 ### sequences and variants from the shuffled genome
 # filter parameter are to be read from a "input_pars.yml" file in the current folder
 pars = YAML.load_file("#{loc}/input_pars.yml")
-fasta_shuffle = pars['fasta']
-mut_vcf = pars['mut_vcf']
-mut_bam = pars['mut_bam']
-bg_vcf = pars['bg_vcf']
-bg_bam = pars['bg_bam']
+# fasta_shuffle = pars['fasta']
+# mut_vcf = pars['mut_vcf']
+# mut_bam = pars['mut_bam']
+# bg_vcf = pars['bg_vcf']
+mut_pileup = pars['mut_pileup']
+bg_pileup = pars['bg_pileup']
 adjust = pars['ratio_adj'].to_f
 threshold = pars['filter'].to_i
 log_folder = "#{pars['logdir']}_#{threshold}_#{adjust}"
@@ -47,9 +48,8 @@ log_folder = "#{pars['logdir']}_#{threshold}_#{adjust}"
 FileUtils.mkdir_p "#{log_folder}"
 
 # ###[1] Open VCF file
-vars_mut = Polyploid.vars_in_file(mut_vcf, mut_bam, fasta_shuffle)
-vars_bg = Polyploid.vars_in_file(bg_vcf, bg_bam, fasta_shuffle)
-var_pos = Polyploid.filter_vars(vars_mut, vars_bg)
+vars_bg = Polyploid.vars_in_pileup(bg_pileup)
+var_pos = Polyploid.filter_vars(mut_pileup, vars_bg)
 
 File.open("#{log_folder}/1_4_frag_pos.yml", 'w') do |file|
   file.write var_pos.to_yaml
