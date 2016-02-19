@@ -28,7 +28,8 @@ class Plot
                                       r2 = format(summary(k)$r.squared, digits = 3))))
     }
 
-    png(paste(dir, "/", nametag, "_qqplot_exp_hyp", ".png", sep=""), width=500, height=500)
+    pdf(paste(dir, "/", nametag, "_qqplot_exp_hyp.pdf", sep=""), width=4, height=4)
+    par(cex.axis=0.5, cex.lab=0.8, cex.main=1, mar=c(2.5,2,1,0.2), oma=c(0,0,0,0), mgp=c(1, 0.3, 0))
     options(scipen = 10)
     x <- experimental
     y <- rnorm(length(x), mean(x), sd(x))
@@ -49,7 +50,8 @@ class Plot
     myr.assign 'ratio', ratio
     # myr.assign 'length', length
     myr.assign 'dir', dir
-    myr.eval 'png(paste(dir,"/", "experimental_densities",".png", sep=""), width=800, height=500)
+    myr.eval 'pdf(paste(dir, "/experimental_densities.pdf", sep=""), width=7, height=3)
+    par(cex.axis=0.5, cex.lab=0.8, cex.main=1, mar=c(2.5,2,1,0.2), oma=c(0,0,0,0), mgp=c(1, 0.3, 0))
     options(scipen = 10)
     d1 <- density(hm, adjust = 1, kernel = c("gaussian"))
     d2 <- density(ht, adjust = 1, kernel = c("gaussian"))
@@ -90,9 +92,7 @@ class Plot
 
     myr.eval 'd1 <-density(experimental, adjust = 1, kernel = c("gaussian"))
     d2 <-density(real_ratios, adjust = 1, kernel = c("gaussian"))
-    #png(paste(dir,"/", "ratios",".png", sep=""), width=1600, height=1000, pointsize=18)
-    #par(cex.axis=1.2, cex.lab=1.5, cex.main=2, mar=c(4.1,2.5,2,0.5), oma=c(0,0,0,0))
-    pdf(paste(dir,"/", "ratios",".pdf", sep=""), width=7, height=4)
+    pdf(paste(dir, "/compare_outcome.pdf", sep=""), width=7, height=4)
     par(cex.axis=0.6, cex.lab=1, cex.main=1.2, mar=c(2.5,1.2,1,0.2), oma=c(0,0,0,0), mgp=c(1, 0.3, 0))
     layout(matrix(c(1,2,3,4), 2, 2, byrow = TRUE), widths=c(1,3))
     #options(scipen = 10)
