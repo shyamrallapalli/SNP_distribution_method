@@ -32,7 +32,7 @@ class Pileup
   # count bases matching reference and non-reference
   # from snp variant and make a hash of bases with counts
   # for indels return the read bases information instead
-  def self.read_base_hash(read_bases)
+  def self.read_bases_to_hash(read_bases)
     bases_hash = {}
     if read_bases =~ /\+/
       return read_bases

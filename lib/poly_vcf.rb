@@ -18,7 +18,7 @@ class Polyploid
       pileup = Bio::DB::Pileup.new(line)
       if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3) and pileup.consensus != pileup.ref_base
         read_bases = Pileup.get_read_bases(pileup)
-        basehash = Pileup.read_base_hash(read_bases)
+        basehash = Pileup.read_bases_to_hash(read_bases)
         vars_hash[pileup.ref_name][pileup.pos] = basehash
         # puts "#{pileup.ref_name}\t#{pileup.pos}\t#{pileup.consensus}\t#{basehash}\n"
       end
@@ -30,7 +30,7 @@ class Polyploid
   # a hash of base proportion is calculated
   # base proportion hash below a selected depth is empty
   # base proportion below or equal to a noise factor are discarded
-  def self.get_base_freq(hash, depth, noise)
+  def self.get_var_base_prop(hash, depth, noise)
     snp_hash = {}
     coverage = hash.values.inject { | sum, n | sum + n.to_f }
     return snp_hash if coverage < depth
@@ -90,13 +90,13 @@ class Polyploid
       pileup = Bio::DB::Pileup.new(line)
       if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3) and pileup.consensus != pileup.ref_base
         read_bases = Pileup.get_read_bases(pileup)
-        data1 = Pileup.read_base_hash(read_bases)
+        data1 = Pileup.read_bases_to_hash(read_bases)
         frag = pileup.ref_name
         pos = pileup.pos
         if data1.instance_of? Hash
-          mut_bases = get_base_freq(data1, depth, noise)
+          mut_bases = get_var_base_prop(data1, depth, noise)
           if vars_hash_bg[frag].key?(pos) and vars_hash_bg[frag][pos].instance_of? Hash
-            bg_bases = get_base_freq(vars_hash_bg[frag][pos], depth, noise)
+            bg_bases = get_var_base_prop(vars_hash_bg[frag][pos], depth, noise)
             vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos, bg_bases)
           else
             vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
