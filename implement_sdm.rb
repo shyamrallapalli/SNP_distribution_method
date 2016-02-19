@@ -6,6 +6,7 @@ require_relative 'lib/ratio_filter'
 require_relative 'lib/fragments'
 require_relative 'lib/vcf'
 require_relative 'lib/pileup'
+require_relative 'lib/poly_vcf'
 
 require 'pp'
 require 'benchmark'
@@ -32,18 +33,24 @@ FileUtils.cd("#{loc}")
 #### Inputs
 ### sequences and variants from the shuffled genome
 # filter parameter are to be read from a "input_pars.yml" file in the current folder
-pars = YAML.load_file('./input_pars.yml')
+pars = YAML.load_file("#{loc}/input_pars.yml")
 fasta_shuffle = pars['fasta']
-bamfile = pars['bam']
-vcf_file = pars['vcf']
-background = pars['background']
+mut_bam = pars['mut_bam']
+bg_bam = pars['bg_bam']
+
+mut_vcf = pars['mut_vcf']
+bg_vcf = pars['bg_vcf']
+
+mut_pileup = pars['mut_pileup']
+bg_pileup = pars['bg_pileup']
+
 adjust = pars['ratio_adj'].to_f
 threshold = pars['filter'].to_i
 cross = pars['cross']
-output_folder = "#{pars['outdir']}_#{threshold}_#{adjust}"
-log_folder = "#{pars['logdir']}_#{threshold}_#{adjust}"
 
 # Make Output directory
+output_folder = "#{pars['outdir']}_#{threshold}_#{adjust}"
+log_folder = "#{pars['logdir']}_#{threshold}_#{adjust}"
 FileUtils.mkdir_p "#{output_folder}"
 FileUtils.mkdir_p "#{log_folder}"
 
@@ -60,17 +67,33 @@ puts "A factor of #{adjust} will be used to calculate the ratio"
 
 
 # ###[1] Open VCF file
-if background == ''
-  var_pos = Vcf.get_vars(vcf_file)
+if bg_vcf == '' and bg_pileup == ''
+  if mut_pileup != ''
+    # do something with only mut pileup file
+  elsif mut_vcf != ''
+    var_pos = Vcf.get_vars(mut_vcf)
+  else
+    warn 'nothing to do here, provide me pileup or vcf file'
+    exit
+  end
 else
-  var_pos = Vcf.filtering(vcf_file, background)
+  if mut_pileup != '' and bg_pileup != ''
+    vars_bg = Polyploid.vars_in_pileup(bg_pileup)
+    var_pos = Polyploid.filter_vars(mut_pileup, vars_bg)
+  elsif mut_vcf != '' and bg_vcf != ''
+    var_pos = Vcf.filtering(mut_vcf, bg_vcf)
+  else
+    warn 'nothing to do here, provide me with pileup or vcf file for both mutant and background'
+    exit
+  end
 end
+
 File.open("#{log_folder}/1_4_frag_pos.yml", 'w') do |file|
   file.write var_pos.to_yaml
 end
 
 # ###[2] Open FASTA files containing the unordered contigs
-# #Create a hash with shuffled fragments seq ids - values are lengths and sequences
+# Create a hash with shuffled fragments seq ids - values are lengths and sequences
 # inseq = FileRW.fasta_parse(fasta_shuffle)
 inseq = {}
 temp  = Bio::DB::FastaLengthDB.new(:file => fasta_shuffle)
@@ -104,7 +127,7 @@ sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, th
 FileRW.write_txt("#{log_folder}/4_5_selected_frags", sel_frags)
 mut_frags = sel_frags
 
-sortfrags = Pileup.pick_frag_vars(bamfile,fasta_shuffle,sel_frags,input_frags)
+sortfrags = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags)
 File.open("#{log_folder}/4_6_sortfrags.yml", 'w') do |file|
   file.write sortfrags.to_yaml
 end

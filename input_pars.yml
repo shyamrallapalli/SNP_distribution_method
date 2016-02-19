@@ -1,15 +1,22 @@
 # specify the names of input fasta and vcf file
-# and pararmeters needed for sdm running
+# and parameters needed for sdm running
 fasta: 'frags_shuffled.fasta'
-vcf: 'snps.vcf'
-background: ''
+# need at least vcf or pileup file from mutant to proceed
+# input mutant related info
+mut_vcf: 'snps.vcf'
+mut_bam: ''
+mut_pileup: ''
+# input background related info
+bg_vcf: ''
+bg_bam: ''
+bg_pileup: ''
 # name prefix for output and log directories
 outdir: 'sdm_out'
 logdir: 'sdm_log'
 # degree of filtering such as 100, 50, 10, 5
 # cut off filter calculated as percent of maximum ratio
 filter: 0
-# 1 or 0.1 or 0.01 etc will be added to numertator and denominator
+# 1 or 0.1 or 0.01 etc will be added to numerator and denominator
 ratio_adj: 0.5
 # cross is either back or out
 cross: out
