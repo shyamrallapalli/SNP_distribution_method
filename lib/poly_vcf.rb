@@ -56,27 +56,47 @@ class Polyploid
     mode
   end
 
+  # method to compare base hash between and background and mutant
+  # returns the var_type if single base left after background subtraction
+  # otherwise returns empty for multiple vars
+  def self.multi_var_hash(base_hash, background='')
+    var_type = ''
+    mut_vars = base_hash.keys.sort
+    # ignore complex variant locations
+    return var_type if mut_vars.length > 2
+    if background != ''
+      bg_vars = background.keys.sort
+      return var_type if mut_vars == bg_vars
+      mut_vars.delete_if { |base| bg_vars.include?(base) }
+      if mut_vars.length == 1
+        var_type = var_mode(base_hash[mut_vars[0]])
+      end
+    end
+    var_type
+  end
 
   def self.push_base_hash(base_hash, store_hash, frag, pos, background='')
     # we are only dealing with single element hashes
     # so discard hashes with more than one element and empty hashes
-    if base_hash.length > 1 or base_hash.empty?
+    # empty hash results from position below selected coverage or bases freq below noise
+    return store_hash if base_hash.empty?
+    if base_hash.length > 1
+      vartype = multi_var_hash(base_hash, background)
       warn "#{frag}\t#{pos}\t#{base_hash}\t#{background}\n"
-      return store_hash
-    end
-    base = base_hash.keys[0]
-    if background == ''
-      mut_type = var_mode(base_hash[base])
-      store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+      if vartype == ''
+        return store_hash
+      else
+        store_hash = Vcf.push_to_hash(store_hash, frag, pos, vartype)
+      end
     else
-      if background.key?(base)
-        mut_type = var_mode(base_hash[base])
+      base = base_hash.keys[0]
+      mut_type = var_mode(base_hash[base])
+      if background != '' and background.key?(base)
         bg_type = var_mode(background[base])
         # if both have the same base type then return original hash
         return store_hash if mut_type == bg_type
         store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
       else
-        mut_type = var_mode(base_hash[base])
         store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
       end
     end
