@@ -125,7 +125,6 @@ FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 
 sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, threshold)
 FileRW.write_txt("#{log_folder}/4_5_selected_frags", sel_frags)
-mut_frags = sel_frags
 
 sortfrags = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags)
 File.open("#{log_folder}/4_6_sortfrags.yml", 'w') do |file|
@@ -146,6 +145,7 @@ outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], sdm_frags, adjust)
 
 # ###[6] Plots
 
+new_mut_frags = []
 # #Plot expected vs SDM ratios, QQplots
 # candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
 File.open("#{output_folder}/mutation.txt", 'w+') do |f|
@@ -153,17 +153,21 @@ File.open("#{output_folder}/mutation.txt", 'w+') do |f|
   # f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
   f.puts "non_ref_ratio\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
   sortfrags.keys.sort.reverse.each do | ratio_1 |
-    sortfrags[ratio_1].each_key do | frag_1 |
-      sortfrags[ratio_1][frag_1].each_key do | pos_1 |
-        pileup = sortfrags[ratio_1][frag_1][pos_1].to_s
-        f.puts "#{ratio_1}\t#{pileup}"
+    if ratio_1 >= 0.5
+      sortfrags[ratio_1].each_key do | frag_1 |
+        new_mut_frags << frag_1
+        sortfrags[ratio_1][frag_1].each_key do | pos_1 |
+          pileup = sortfrags[ratio_1][frag_1][pos_1].to_s
+          f.puts "#{ratio_1}\t#{pileup}"
+        end
       end
     end
   end
 end
 
 Mutation.density_plot(outcome, average_contig.to_f, output_folder)
-
+new_mut_frags.uniq!
+FileRW.write_txt("#{log_folder}/6_7_final_selected_frags", new_mut_frags)
 
 ########## Test comparison inputs and analysis and comparison
 
@@ -196,5 +200,5 @@ if pars['test']
     file.write outcome.to_yaml
   end
 
-  Mutation.compare_density(outcome, mut_frags, average_contig.to_f, genome_length, output_folder,  original)
+  Mutation.compare_density(outcome, new_mut_frags, average_contig.to_f, genome_length, output_folder,  original)
 end
