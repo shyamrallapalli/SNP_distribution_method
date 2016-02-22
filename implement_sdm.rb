@@ -95,14 +95,13 @@ end
 # ###[2] Open FASTA files containing the unordered contigs
 # Create a hash with shuffled fragments seq ids - values are lengths and sequences
 # inseq = FileRW.fasta_parse(fasta_shuffle)
-inseq = {}
 temp  = Bio::DB::FastaLengthDB.new(:file => fasta_shuffle)
-inseq[:len] = temp.instance_variable_get(:@seqs)
-ids = inseq[:len].keys
-genome_length = inseq[:len].values.inject { | sum, n | sum + n }
+inseq_len = temp.instance_variable_get(:@seqs)
+ids = inseq_len.keys
+genome_length = inseq_len.values.inject { | sum, n | sum + n }
 average_contig = genome_length / ids.length
 
-input_frags = Vcf.varpos_aggregate(var_pos, inseq[:len], ids, adjust, 'no')
+input_frags = Vcf.varpos_aggregate(var_pos, inseq_len, ids, adjust, 'no')
 File.open("#{log_folder}/t_17_input_frags.yml", 'w') do |file|
   file.write input_frags.to_yaml
 end
@@ -140,7 +139,7 @@ region = average_contig * (sdm_frags.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
 puts '______________________'
 
-outcome = Vcf.varpos_aggregate(var_pos, inseq[:len], sdm_frags, adjust)
+outcome = Vcf.varpos_aggregate(var_pos, inseq_len, sdm_frags, adjust)
 
 
 # ###[6] Plots
@@ -176,7 +175,7 @@ if pars['test']
   frags_order = pars['frags_order']
   ids_ok = FileRW.to_array(frags_order)
 
-  original = Vcf.varpos_aggregate(var_pos, inseq[:len], ids_ok, adjust)
+  original = Vcf.varpos_aggregate(var_pos, inseq_len, ids_ok, adjust)
 
 
   # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
