@@ -67,14 +67,30 @@ class Pileup
     ratio
   end
 
-  def self.pick_frag_vars(bamfile,infasta,keyfrags,input_frags)
-    bam = Bio::DB::Sam.new(:bam=>bamfile, :fasta=>infasta)
-    bam.open
+  def self.get_bg_ratio(bg_bam,selfrag,mutpos)
+    bg_ratio = ''
+    bg_pileups = get_pileup(bg_bam,selfrag,mutpos)
+    if bg_pileups.empty?
+      return bg_ratio
+    end
+    pileup = bg_pileups[0]
+    read_bases = get_read_bases(pileup)
+    bg_ratio = get_nonref_ratio(read_bases)
+    bg_ratio
+  end
+
+  def self.pick_frag_vars(mutbam,infasta,keyfrags,input_frags, bgbam='')
+    mut_bam = Bio::DB::Sam.new(:bam=>mutbam, :fasta=>infasta)
+    mut_bam.open
+    if bgbam != ''
+      bg_bam = Bio::DB::Sam.new(:bam=>bgbam, :fasta=>infasta)
+      bg_bam.open
+    end
     sortfrags = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     keyfrags.each do | selfrag |
       positions = input_frags[selfrag][:hm_pos]
       positions.each do | mutpos |
-        pileups = get_pileup(bam,selfrag,mutpos)
+        pileups = get_pileup(mut_bam,selfrag,mutpos)
         if pileups.empty?
           next
         end
@@ -82,7 +98,19 @@ class Pileup
         if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
           read_bases = get_read_bases(pileup)
           ratio = get_nonref_ratio(read_bases)
-          sortfrags[ratio][selfrag][mutpos] = pileup
+          if bgbam != ''
+            bg_ratio = get_bg_ratio(bg_bam,selfrag,mutpos)
+            if bg_ratio == ''
+              sortfrags[ratio][selfrag][mutpos] = pileup
+            elsif bg_ratio <= 0.35
+              sortfrags[ratio][selfrag][mutpos] = pileup
+            else
+              warn "#{selfrag}\t#{mutpos}\t#{ratio}\t#{bg_ratio}\n"
+              next
+            end
+          else
+            sortfrags[ratio][selfrag][mutpos] = pileup
+          end
         end
       end
     end

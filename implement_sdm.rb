@@ -67,6 +67,7 @@ puts "A factor of #{adjust} will be used to calculate the ratio"
 
 
 # ###[1] Open VCF file
+var_pos = ''
 if bg_vcf == '' and bg_pileup == ''
   if mut_pileup != ''
     # do something with only mut pileup file
@@ -125,7 +126,7 @@ FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, threshold)
 FileRW.write_txt("#{log_folder}/4_5_selected_frags", sel_frags)
 
-sortfrags = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags)
+sortfrags = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,bg_bam)
 File.open("#{log_folder}/4_6_sortfrags.yml", 'w') do |file|
   file.write sortfrags.to_yaml
 end
