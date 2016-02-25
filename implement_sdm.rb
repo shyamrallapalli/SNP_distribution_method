@@ -151,7 +151,7 @@ mut_frags_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
 File.open("#{output_folder}/mutation.txt", 'w+') do |f|
   # f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
   # f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
-  f.puts "non_ref_ratio\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
+  f.puts "Frag_homo_ratio\tnon_ref_ratio\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
   sortfrags.keys.sort.reverse.each do | ratio_1 |
     if ratio_1 >= 0.75
       sortfrags[ratio_1].each_key do | frag_1 |
@@ -159,7 +159,7 @@ File.open("#{output_folder}/mutation.txt", 'w+') do |f|
         sortfrags[ratio_1][frag_1].each_key do | pos_1 |
           mut_frags_pos[frag_1][pos_1] = 1
           pileup = sortfrags[ratio_1][frag_1][pos_1].to_s
-          f.puts "#{ratio_1}\t#{pileup}"
+          f.puts "#{input_frags[frag_1][:ratio]}\t#{ratio_1}\t#{pileup}"
         end
       end
     end
@@ -183,6 +183,10 @@ outcome = Vcf.varpos_aggregate(var_pos, inseq_len, sdm_frags, adjust)
 Mutation.density_plot(outcome, average_contig.to_f, output_folder)
 new_mut_frags.uniq!
 FileRW.write_txt("#{log_folder}/6_7_final_selected_frags", new_mut_frags)
+
+# Create FASTA file for the fragments selected to host mutation
+filename = "selected_frags_thres#{threshold}.fasta"
+FileRW.write_order(new_mut_frags, fasta_shuffle, filename)
 
 ########## Test comparison inputs and analysis and comparison
 
