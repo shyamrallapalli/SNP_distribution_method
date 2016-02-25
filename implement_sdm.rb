@@ -180,7 +180,7 @@ end
 # do the pos aggregation after trimming filtered positions
 outcome = Vcf.varpos_aggregate(var_pos, inseq_len, sdm_frags, adjust)
 
-Mutation.density_plot(outcome, average_contig.to_f, output_folder)
+Mutation.density_plot(outcome, output_folder)
 new_mut_frags.uniq!
 FileRW.write_txt("#{log_folder}/6_7_final_selected_frags", new_mut_frags)
 

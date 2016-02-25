@@ -43,12 +43,11 @@ class Plot
     myr.quit
   end
 
-  def self.densities(hm, ht, ratio, length, dir)
+  def self.densities(hm, ht, ratio, dir)
     myr = RinRuby.new(:echo=>false)
     myr.assign 'hm', hm
     myr.assign 'ht', ht
     myr.assign 'ratio', ratio
-    # myr.assign 'length', length
     myr.assign 'dir', dir
     myr.eval 'pdf(paste(dir, "/experimental_densities.pdf", sep=""), width=7, height=3)
     par(cex.axis=0.5, cex.lab=0.8, cex.main=1, mar=c(2.5,2,1,0.2), oma=c(0,0,0,0), mgp=c(1, 0.3, 0))
@@ -62,7 +61,7 @@ class Plot
       xlim =c(length[1], length[2]), xlab = "variant position", ylab = "densities")
     lines(d1, col = "magenta2") ## Homozygous
     lines(d2, col = "royalblue2", lty=2) ## Heterozygous
-    lines(d3, col = "gray46", lwd =5) ## Homozygous/Heterozygous ratio
+    lines(d3, col = "gray46", lwd =3) ## Homozygous/Heterozygous ratio
     axis(3, at=c(length[1], length[1]+diff(length)/2, length[2]), labels=c(1, diff(length)/2, diff(length)) )
     legend("topright",col=c("magenta2", "royalblue2", "grey46"),lwd=1,lty=1:2,
       legend=c("Homozygous SNP density","Heterozygous SNP density", "Hom/Het ratio"), bty="n")

@@ -8,11 +8,16 @@ class Mutation
   # Input 0: The average contig length
   # Input 1: Array of homozygous (hm) or heterozygous (hm) or ratio (hm/ht) of SNPs per each contig.
   # Output: A list of positions which represents the density of hm or ht or hm/ht ratios
-  def self.putative_density(mean_contig_len, ratios)
+  def self.putative_density(outcome)
+    frags = outcome.keys
     positions = []
-    ratios.length.times do | i |
-      multiple = i + 1
-      positions << [mean_contig_len * multiple] * (ratios[i] * 10).to_i
+    cumulative_len = 0
+    frags.each do | frag |
+      cumulative_len += outcome[frag][:len].to_i
+      ratio = outcome[frag][:ratio]
+      multiplier = (ratio * 10).to_i
+      next if multiplier == 0
+      positions << [cumulative_len] * multiplier
     end
     positions.flatten!
   end
@@ -30,21 +35,19 @@ class Mutation
     candidate_frags
   end
 
-  def self.density_plot(outcome, mean_contig_len, dir)
+  def self.density_plot(outcome, dir)
     # create arrays with the  SNP positions in the new ordered file.
     snps_hm, snps_ht = Vcf.varpositions(outcome)
     FileRW.write_txt("#{dir}/perm_hm", snps_hm)
     FileRW.write_txt("#{dir}/perm_ht", snps_ht)
 
     # generate experimental densities from ratios of the outcome order
-    region = mean_contig_len * outcome.keys.length
-    outcome_ratios = RatioFilter.get_ratios(outcome)
-    exp_order_density = putative_density(mean_contig_len, outcome_ratios)
+    exp_order_density = putative_density(outcome)
 
     # Find the peak in the approximated (hypothetical SNP) distribution
     # candidate_snp = closest_snp(exp_order_density, snps_hm, n)
 
-    Plot.densities(snps_hm, snps_ht, exp_order_density, region, dir)
+    Plot.densities(snps_hm, snps_ht, exp_order_density, dir)
     Plot.qqplot(snps_hm, dir, 'QQplot for hm density', 'Theoretical normal distribution', 'Hypothetical SNP density', 'hm_snps')
     Plot.qqplot(exp_order_density, dir, 'QQplot for the ratios', 'Theoretical normal distribution', 'Hypothetical ratios', 'ratios')
 
@@ -68,10 +71,8 @@ class Mutation
 
   def self.compare_density(outcome, mut_frags, mean_contig_len, genome_len, dir, original)
     # generate experimental densities from ratios of the outcome order
-    outcome_ratios = RatioFilter.get_ratios(outcome)
-    exp_order_density = putative_density(mean_contig_len, outcome_ratios)
-    original_ratios = RatioFilter.get_ratios(original)
-    real_order_density = putative_density(mean_contig_len, original_ratios)
+    exp_order_density = putative_density(outcome)
+    real_order_density = putative_density(outcome)
 
     original_pos, outcome_pos = adjusted_positions(mut_frags, original, outcome)
     region = mean_contig_len * outcome.keys.length
