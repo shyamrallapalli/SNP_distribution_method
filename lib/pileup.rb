@@ -74,8 +74,10 @@ class Pileup
       return bg_ratio
     end
     pileup = bg_pileups[0]
-    read_bases = get_read_bases(pileup)
-    bg_ratio = get_nonref_ratio(read_bases)
+    if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
+      read_bases = get_read_bases(pileup)
+      bg_ratio = get_nonref_ratio(read_bases)
+    end
     bg_ratio
   end
 
