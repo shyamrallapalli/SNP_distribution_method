@@ -72,7 +72,7 @@ class Mutation
   def self.compare_density(outcome, mut_frags, mean_contig_len, genome_len, dir, original)
     # generate experimental densities from ratios of the outcome order
     exp_order_density = putative_density(outcome)
-    real_order_density = putative_density(outcome)
+    real_order_density = putative_density(original)
 
     original_pos, outcome_pos = adjusted_positions(mut_frags, original, outcome)
     region = mean_contig_len * outcome.keys.length
