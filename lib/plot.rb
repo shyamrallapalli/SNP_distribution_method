@@ -34,8 +34,8 @@ class Plot
     x <- experimental
     y <- rnorm(length(x), mean(x), sd(x))
     # df <- data.frame(x, y)
-    V = qqplot(x, y, main=title, ylab=ylabel, xlab =xlabel)
-    l <- qqline2(x, y, col = 6)
+    V = qqplot(x, y, main=title, ylab=ylabel, xlab =xlabel, pch=20, col="#0072B2")
+    l <- qqline2(x, y, col ="#D55E00")
     # fg <- data.frame(V$x, V$y)
     k <- lm(V$y ~ V$x)
     len <- leg_r2(k)
@@ -59,11 +59,11 @@ class Plot
     length <- range(hm, ht, ratio)
     plot(range(d1$x, d2$x, d3$x), range(d1$y, d2$y, d3$y), type = "n",
       xlim =c(length[1], length[2]), xlab = "variant position", ylab = "densities")
-    lines(d1, col = "magenta2") ## Homozygous
-    lines(d2, col = "royalblue2", lty=2) ## Heterozygous
-    lines(d3, col = "gray46", lwd =3) ## Homozygous/Heterozygous ratio
+    lines(d1, col = "#0072B2") ## Homozygous
+    lines(d2, col = "#999999") ## Heterozygous
+    lines(d3, col = "#D55E00", lwd =2) ## Homozygous/Heterozygous ratio
     axis(3, at=c(length[1], length[1]+diff(length)/2, length[2]), labels=c(1, diff(length)/2, diff(length)) )
-    legend("topright",col=c("magenta2", "royalblue2", "grey46"),lwd=1,lty=1:2,
+    legend("topright", col=c("#0072B2", "#999999", "#D55E00"), lwd=1,
       legend=c("Homozygous SNP density","Heterozygous SNP density", "Hom/Het ratio"), bty="n")
     dev.off()'
     myr.quit
@@ -95,12 +95,12 @@ class Plot
     par(cex.axis=0.6, cex.lab=1, cex.main=1.2, mar=c(2.5,1.2,1,0.2), oma=c(0,0,0,0), mgp=c(1, 0.3, 0))
     layout(matrix(c(1,2,3,4), 2, 2, byrow = TRUE), widths=c(1,3))
     #options(scipen = 10)
-    plot(d1$x, d1$y, col = "slategray4", lwd =2, type = "l", main="sdm ratios", xlab="", ylab="")
+    plot(d1$x, d1$y, col = "#F0E442", lwd =2, type = "l", main="sdm ratios", xlab="", ylab="")
     plot(d1$x, d1$y, type = "n", main = "variant arrangment", xlim =c(0,length), xlab="", ylab="", yaxt="n")
-    abline(v=outcome_pos, col = "blue", lty=2)
-    plot(d2$x, d2$y, col = "steelblue3", lwd =2, type = "l", main="original ratios", xlab="", ylab="")
+    abline(v=outcome_pos, col = "#F0E442", lty=2)
+    plot(d2$x, d2$y, col = "#0072B2", lwd =2, type = "l", main="original ratios", xlab="", ylab="")
     plot(d2$x, d2$y, type = "n", main = "original var positions", xlim =c(0,length), xlab="genome positions", ylab="", yaxt="n")
-    abline(v=original_pos, col = "red", lty=2)
+    abline(v=original_pos, col = "#0072B2", lty=2)
     dev.off()'
     myr.quit
   end
