@@ -56,6 +56,18 @@ class Polyploid
     mode
   end
 
+  # get total proportion of bases in hash
+  def self.polybase_proportion(vars, hash)
+    prop = 0.0
+    hash.each_key { | key |
+      if vars.include?(key)
+        prop += hash[key]
+      end
+    }
+    # warn "polybase\t#{hash}\t#{vars}\t#{prop}\n"
+    prop
+  end
+
   # method to compare base hash between and background and mutant
   # returns the var_type if single base left after background subtraction
   # otherwise returns empty for multiple vars
@@ -63,14 +75,20 @@ class Polyploid
     var_type = ''
     mut_vars = base_hash.keys.sort
     # ignore complex variant locations
-    return var_type if mut_vars.length > 2
+    # return var_type if mut_vars.length > 2
     if background != ''
       bg_vars = background.keys.sort
       return var_type if mut_vars == bg_vars
       mut_vars.delete_if { |base| bg_vars.include?(base) }
       if mut_vars.length == 1
         var_type = var_mode(base_hash[mut_vars[0]])
+      else
+        ratio = polybase_proportion(mut_vars, base_hash)
+        var_type = var_mode(ratio)
       end
+    else
+      ratio = polybase_proportion(mut_vars, base_hash)
+      var_type = var_mode(ratio)
     end
     var_type
   end
@@ -82,7 +100,7 @@ class Polyploid
     return store_hash if base_hash.empty?
     if base_hash.length > 1
       vartype = multi_var_hash(base_hash, background)
-      warn "#{frag}\t#{pos}\t#{base_hash}\t#{background}\n"
+      # warn "#{frag}\t#{pos}\t#{base_hash}\t#{background}\n"
       if vartype == ''
         return store_hash
       else
