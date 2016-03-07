@@ -109,7 +109,7 @@ end
 
 # ###[3]
 # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
-ratios_hash = RatioFilter.selected_ratios(input_frags, threshold)
+ratios_hash = RatioFilter.selected_ratios(input_frags)
 File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
   file.write ratios_hash.to_yaml
 end
@@ -165,6 +165,8 @@ File.open("#{output_folder}/mutation.txt", 'w+') do |f|
     end
   end
 end
+new_mut_frags.uniq!
+FileRW.write_txt("#{log_folder}/6_7_final_selected_frags", new_mut_frags)
 
 # delete positions in the selected fragments that didn't pass the filtering
 mut_frags_pos.each_key do | fragment |
@@ -180,9 +182,13 @@ end
 # do the pos aggregation after trimming filtered positions
 outcome = Vcf.varpos_aggregate(var_pos, inseq_len, sdm_frags, adjust)
 
+File.open("#{output_folder}/outcome_table.txt", 'w+') do |f|
+  outcome.each_key do |key|
+    f.puts "#{key}\t#{outcome[key][:ratio]}\t#{outcome[key][:hm]}\t#{outcome[key][:ht]}\t#{outcome[key][:len]}\t#{outcome[key][:hm_pos]}\n"
+  end
+end
+
 Mutation.density_plot(outcome, output_folder)
-new_mut_frags.uniq!
-FileRW.write_txt("#{log_folder}/6_7_final_selected_frags", new_mut_frags)
 
 # Create FASTA file for the fragments selected to host mutation
 filename = "selected_frags_thres#{threshold}.fasta"

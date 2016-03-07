@@ -3,55 +3,36 @@ require 'csv'
 
 class RatioFilter
 
-  def self.get_ratios(inhash)
-    ratios = []
+  def self.prune_hash(inhash)
+    first = inhash.length
     inhash.each_key do | frag |
-      ratios << inhash[frag][:ratio]
+      numhm = inhash[frag][:hm]
+      numht = inhash[frag][:ht]
+      if numht >= numhm
+        inhash.delete(frag)
+      end
     end
-    ratios
+    last = inhash.length
+    warn "Discarded #{first-last} out of #{first} fragments\n"
+    inhash
   end
 
-  def self.ratio_hash(inhash)
-    hash = {}
+  def self.selected_ratios(inhash, select_hmes=true)
+    ratios_hash = {}
+    # select only frag with higher hmes (homozygous enrichment score)
+    # this is to discard fragments which may not contain information
+    #  about causative mutations
+    if select_hmes
+      inhash = prune_hash(inhash)
+    end
     inhash.keys.each do | frag |
       ratio = inhash[frag][:ratio]
-      if hash.key?(ratio)
-        hash[ratio] << frag
+      if ratios_hash.key?(ratio)
+        ratios_hash[ratio] << frag
       else
-        hash[ratio] = []
-        hash[ratio] << frag
+        ratios_hash[ratio] = []
+        ratios_hash[ratio] << frag
       end
-    end
-    hash
-  end
-
-  def self.selected_ratios(inhash, threshold)
-    initial = inhash.keys.length
-    ratios = get_ratios(inhash)
-
-    if threshold > 0
-      thres = 100.0/threshold.to_f
-      filter = (ratios.max.to_f)/thres
-      # go through selection if the threshold of discarded fragments is low
-      sel_ids = inhash.keys
-      contigs_discarded = initial - sel_ids.length
-      while sel_ids.length > 30 * contigs_discarded do
-        puts "threshold #{threshold}%"
-        # delete fragment information below selected threshold
-        inhash.keys.each do | frag |
-          if inhash[frag][:ratio] <= filter
-            inhash.delete(frag)
-          end
-        end
-        sel_ids = inhash.keys
-        contigs_discarded = initial - sel_ids.length
-        puts "#{contigs_discarded} contigs out of #{initial} discarded"
-        # increase threshold in steps of 2% until while condition is reached
-        threshold = threshold + 2
-      end
-      ratios_hash = ratio_hash(inhash)
-    else
-      ratios_hash = ratio_hash(inhash)
     end
     ratios_hash
   end
