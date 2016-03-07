@@ -52,8 +52,7 @@ class Pileup
   # and calculate ratio of non_ref allele to total bases
   def self.get_nonref_ratio(read_bases)
     ref_count = read_bases.count('.,')
-    basecounts = read_bases.count('atgcATGC')
-    non_ref_count = basecounts
+    non_ref_count = read_bases.count('atgcATGC')
     if read_bases =~ /\+/
       pluscounts = read_bases.count('+')
       indel_bases = count_indels(read_bases, '+')

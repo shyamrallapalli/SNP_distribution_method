@@ -119,9 +119,8 @@ end
 # #Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
 # with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
 # to reconstruct the right side of the distribution, and left, for the left side)
-sdm_frags, mut_frags = Fragments.arrange(ratios_hash, cross, average_contig)
+sdm_frags = Fragments.arrange(ratios_hash, input_frags)
 FileRW.write_txt("#{log_folder}/4_3_perm_ratio", sdm_frags)
-FileRW.write_txt("#{log_folder}/4_4_mut", mut_frags)
 
 sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, threshold)
 FileRW.write_txt("#{log_folder}/4_5_selected_frags", sel_frags)
