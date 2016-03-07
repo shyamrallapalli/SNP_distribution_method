@@ -125,7 +125,7 @@ FileRW.write_txt("#{log_folder}/4_3_perm_ratio", sdm_frags)
 sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, threshold)
 FileRW.write_txt("#{log_folder}/4_5_selected_frags", sel_frags)
 
-sortfrags = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,bg_bam)
+sortfrags, var_pos_new = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, bg_bam)
 File.open("#{log_folder}/4_6_sortfrags.yml", 'w') do |file|
   file.write sortfrags.to_yaml
 end
@@ -170,16 +170,16 @@ FileRW.write_txt("#{log_folder}/6_7_final_selected_frags", new_mut_frags)
 # delete positions in the selected fragments that didn't pass the filtering
 mut_frags_pos.each_key do | fragment |
   selected_pos = mut_frags_pos[fragment].keys
-  var_pos[:hom][fragment].each do | varpos |
+  var_pos_new[:hom][fragment].each do | varpos |
     unless selected_pos.include?(varpos)
       warn "#{fragment}\t#{varpos}\n"
-      var_pos[:hom][fragment].delete(varpos)
+      var_pos_new[:hom][fragment].delete(varpos)
     end
   end
 end
 
 # do the pos aggregation after trimming filtered positions
-outcome = Vcf.varpos_aggregate(var_pos, inseq_len, sdm_frags, adjust)
+outcome = Vcf.varpos_aggregate(var_pos_new, inseq_len, sdm_frags, adjust)
 
 File.open("#{output_folder}/outcome_table.txt", 'w+') do |f|
   outcome.each_key do |key|

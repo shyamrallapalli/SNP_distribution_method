@@ -80,7 +80,7 @@ class Pileup
     bg_ratio
   end
 
-  def self.pick_frag_vars(mutbam,infasta,keyfrags,input_frags, bgbam='')
+  def self.pick_frag_vars(mutbam,infasta,keyfrags,input_frags, var_pos, bgbam='')
     mut_bam = Bio::DB::Sam.new(:bam=>mutbam, :fasta=>infasta)
     mut_bam.open
     if bgbam != ''
@@ -107,6 +107,7 @@ class Pileup
               sortfrags[ratio][selfrag][mutpos] = pileup
             else
               warn "#{selfrag}\t#{mutpos}\t#{ratio}\t#{bg_ratio}\n"
+              var_pos[:hom][selfrag].delete(mutpos)
               next
             end
           else
@@ -115,7 +116,7 @@ class Pileup
         end
       end
     end
-    sortfrags
+    [sortfrags, var_pos]
   end
 
   # a function to get pileup using a bam object and sequence information
