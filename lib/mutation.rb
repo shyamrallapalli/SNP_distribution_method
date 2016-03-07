@@ -43,11 +43,12 @@ class Mutation
 
     # generate experimental densities from ratios of the outcome order
     exp_order_density = putative_density(outcome)
+    n = outcome.length
 
     # Find the peak in the approximated (hypothetical SNP) distribution
     # candidate_snp = closest_snp(exp_order_density, snps_hm, n)
 
-    Plot.densities(snps_hm, snps_ht, exp_order_density, dir)
+    Plot.densities(snps_hm, snps_ht, exp_order_density, dir, n)
     Plot.qqplot(snps_hm, dir, 'QQplot for hm density', 'Theoretical normal distribution', 'Hypothetical SNP density', 'hm_snps')
     Plot.qqplot(exp_order_density, dir, 'QQplot for the ratios', 'Theoretical normal distribution', 'Hypothetical ratios', 'ratios')
 

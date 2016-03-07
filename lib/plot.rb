@@ -43,18 +43,19 @@ class Plot
     myr.quit
   end
 
-  def self.densities(hm, ht, ratio, dir)
+  def self.densities(hm, ht, ratio, dir, n)
     myr = RinRuby.new(:echo=>false)
     myr.assign 'hm', hm
     myr.assign 'ht', ht
     myr.assign 'ratio', ratio
+    myr.assign 'n', n
     myr.assign 'dir', dir
     myr.eval 'pdf(paste(dir, "/experimental_densities.pdf", sep=""), width=7, height=3)
     par(cex.axis=0.5, cex.lab=0.8, cex.main=1, mar=c(2.5,2,1,0.2), oma=c(0,0,0,0), mgp=c(1, 0.3, 0))
     options(scipen = 10)
-    d1 <- density(hm, adjust = 1, kernel = c("gaussian"))
-    d2 <- density(ht, adjust = 1, kernel = c("gaussian"))
-    d3 <- density(ratio, adjust =1 , kernel = c("gaussian"))
+    d1 <- density(hm, bw="SJ-ste", n=n, kernel="gaussian")
+    d2 <- density(ht, bw="SJ-ste", n=n, kernel="gaussian")
+    d3 <- density(ratio, bw="SJ-ste", n=round(n/2), kernel="gaussian")
     # limit the plot on x-axis based on variant position spread
     length <- range(hm, ht, ratio)
     plot(range(d1$x, d2$x, d3$x), range(d1$y, d2$y, d3$y), type = "n",
