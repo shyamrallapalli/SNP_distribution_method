@@ -43,6 +43,7 @@ class Mutation
 
     # generate experimental densities from ratios of the outcome order
     exp_order_density = putative_density(outcome)
+    FileRW.write_txt("#{dir}/perm_ratio", exp_order_density)
     n = outcome.length
 
     # Find the peak in the approximated (hypothetical SNP) distribution

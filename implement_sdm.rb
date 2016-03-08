@@ -102,32 +102,74 @@ ids = inseq_len.keys
 genome_length = inseq_len.values.inject { | sum, n | sum + n }
 average_contig = genome_length / ids.length
 
-input_frags = Vcf.varpos_aggregate(var_pos, inseq_len, ids, adjust, 'no')
-File.open("#{log_folder}/t_17_input_frags.yml", 'w') do |file|
-  file.write input_frags.to_yaml
-end
+var_pos_new = ''
+sdm_frags = ''
+new_mut_frags = ''
+repeat = 1
+while repeat < 3 do
+  input_frags = Vcf.varpos_aggregate(var_pos, inseq_len, ids, adjust, 'no')
+  File.open("#{log_folder}/#{repeat}_t_17_input_frags.yml", 'w') do |file|
+    file.write input_frags.to_yaml
+  end
 
-# ###[3]
-# #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
-ratios_hash = RatioFilter.selected_ratios(input_frags)
-File.open("#{log_folder}/3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
-  file.write ratios_hash.to_yaml
-end
+  # ###[3]
+  # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
+  ratios_hash = RatioFilter.selected_ratios(input_frags, adjust)
+  File.open("#{log_folder}/#{repeat}_3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
+    file.write ratios_hash.to_yaml
+  end
 
 
-# ###[4] SDM
-# #Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
-# with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
-# to reconstruct the right side of the distribution, and left, for the left side)
-sdm_frags = Fragments.arrange(ratios_hash, input_frags)
-FileRW.write_txt("#{log_folder}/4_3_perm_ratio", sdm_frags)
+  # ###[4] SDM
+  # #Iteration: look for the minimum value in the array of values, that will be 0 (fragments without SNPs) and put the fragments
+  # with this value in a list. Then, the list is cut by half and each half is added to a new array (right, that will be used
+  # to reconstruct the right side of the distribution, and left, for the left side)
+  sdm_frags = Fragments.arrange(ratios_hash, input_frags)
+  FileRW.write_txt("#{log_folder}/#{repeat}_4_3_perm_ratio", sdm_frags)
 
-sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, threshold)
-FileRW.write_txt("#{log_folder}/4_5_selected_frags", sel_frags)
+  sel_frags = Fragments.select_fragments(cross, ratios_hash, sdm_frags, adjust, threshold)
+  FileRW.write_txt("#{log_folder}/#{repeat}_4_5_selected_frags", sel_frags)
 
-sortfrags, var_pos_new = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, bg_bam)
-File.open("#{log_folder}/4_6_sortfrags.yml", 'w') do |file|
-  file.write sortfrags.to_yaml
+  sortfrags, var_pos_new = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, bg_bam)
+  File.open("#{log_folder}/#{repeat}_4_6_sortfrags.yml", 'w') do |file|
+    file.write sortfrags.to_yaml
+  end
+
+  new_mut_frags = []
+  mut_frags_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+  # #Plot expected vs SDM ratios, QQplots
+  # candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
+  File.open("#{output_folder}/#{repeat}_mutation.txt", 'w+') do |f|
+    # f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
+    # f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
+    f.puts "Frag_homo_ratio\tnon_ref_ratio\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
+    sortfrags.keys.sort.reverse.each do | ratio_1 |
+      if ratio_1 >= 0.75
+        sortfrags[ratio_1].each_key do | frag_1 |
+          new_mut_frags << frag_1
+          sortfrags[ratio_1][frag_1].each_key do | pos_1 |
+            mut_frags_pos[frag_1][pos_1] = 1
+            pileup = sortfrags[ratio_1][frag_1][pos_1].to_s
+            f.puts "#{input_frags[frag_1][:ratio]}\t#{ratio_1}\t#{pileup}"
+          end
+        end
+      end
+    end
+  end
+  new_mut_frags.uniq!
+  FileRW.write_txt("#{log_folder}/#{repeat}_6_7_final_selected_frags", new_mut_frags)
+
+  # delete positions in the selected fragments that didn't pass the filtering
+  mut_frags_pos.each_key do | fragment |
+    selected_pos = mut_frags_pos[fragment].keys
+    var_pos_new[:hom][fragment].each do | varpos |
+      unless selected_pos.include?(varpos)
+        warn "#{fragment}\t#{varpos}\n"
+        var_pos_new[:hom][fragment].delete(varpos)
+      end
+    end
+  end
+  repeat += 1
 end
 
 # ###[5] Outputs
@@ -142,41 +184,6 @@ puts '______________________'
 
 
 # ###[6] Plots
-
-new_mut_frags = []
-mut_frags_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-# #Plot expected vs SDM ratios, QQplots
-# candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
-File.open("#{output_folder}/mutation.txt", 'w+') do |f|
-  # f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
-  # f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
-  f.puts "Frag_homo_ratio\tnon_ref_ratio\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
-  sortfrags.keys.sort.reverse.each do | ratio_1 |
-    if ratio_1 >= 0.75
-      sortfrags[ratio_1].each_key do | frag_1 |
-        new_mut_frags << frag_1
-        sortfrags[ratio_1][frag_1].each_key do | pos_1 |
-          mut_frags_pos[frag_1][pos_1] = 1
-          pileup = sortfrags[ratio_1][frag_1][pos_1].to_s
-          f.puts "#{input_frags[frag_1][:ratio]}\t#{ratio_1}\t#{pileup}"
-        end
-      end
-    end
-  end
-end
-new_mut_frags.uniq!
-FileRW.write_txt("#{log_folder}/6_7_final_selected_frags", new_mut_frags)
-
-# delete positions in the selected fragments that didn't pass the filtering
-mut_frags_pos.each_key do | fragment |
-  selected_pos = mut_frags_pos[fragment].keys
-  var_pos_new[:hom][fragment].each do | varpos |
-    unless selected_pos.include?(varpos)
-      warn "#{fragment}\t#{varpos}\n"
-      var_pos_new[:hom][fragment].delete(varpos)
-    end
-  end
-end
 
 # do the pos aggregation after trimming filtered positions
 outcome = Vcf.varpos_aggregate(var_pos_new, inseq_len, sdm_frags, adjust)
