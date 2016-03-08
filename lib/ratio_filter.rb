@@ -3,12 +3,13 @@ require 'csv'
 
 class RatioFilter
 
-  def self.prune_hash(inhash)
+  def self.prune_hash(inhash, adjust)
     first = inhash.length
     inhash.each_key do | frag |
       numhm = inhash[frag][:hm]
       numht = inhash[frag][:ht]
-      if numht >= numhm
+      # selecting fragments which have a variant
+      if numht + numhm <= 2 * adjust
         inhash.delete(frag)
       end
     end
@@ -17,13 +18,14 @@ class RatioFilter
     inhash
   end
 
-  def self.selected_ratios(inhash, select_hmes=true)
+  def self.selected_ratios(inhash, adjust, select_hmes=true)
     ratios_hash = {}
     # select only frag with higher hmes (homozygous enrichment score)
-    # this is to discard fragments which may not contain information
-    #  about causative mutations
+    # or select only fragments with a variant
+    # this is to discard fragments which may not contain
+    # any information about causative mutations
     if select_hmes
-      inhash = prune_hash(inhash)
+      inhash = prune_hash(inhash, adjust)
     end
     inhash.keys.each do | frag |
       ratio = inhash[frag][:ratio]
