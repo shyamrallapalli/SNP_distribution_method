@@ -53,14 +53,19 @@ class Plot
     myr.eval 'pdf(paste(dir, "/experimental_densities.pdf", sep=""), width=7, height=3)
     par(cex.axis=0.5, cex.lab=0.8, cex.main=1, mar=c(2.5,2,1,0.2), oma=c(0,0,0,0), mgp=c(1, 0.3, 0))
     options(scipen = 10)
-    d1 <- density(hm, bw="SJ-ste", kernel="gaussian")
-    d2 <- density(ht, bw="SJ-ste", kernel="gaussian")
-    d3 <- density(ratio, kernel="gaussian")
+    d1 <- density(hm, bw="bcv", kernel="gaussian")
+    d2 <- density(ht, bw="bcv", kernel="gaussian")
+    d3 <- density(ratio, bw="bcv", kernel="gaussian")
     # limit the plot on x-axis based on variant position spread
     length <- range(hm, ht, ratio)
-    plot(range(d1$x, d2$x, d3$x), range(d1$y, d2$y, d3$y), type = "n",
+    # if the density peak is higher in hm density then adjust to reduce it
+    hm_max = max(d1$y)
+    ratio_max = max(d3$y)
+    adj = 1
+    if (hm_max > ratio_max) { adj = round(0.5 + (hm_max/ratio_max)) }
+    plot(range(d1$x, d2$x, d3$x), range(d1$y/adj, d2$y, d3$y), type = "n",
       xlim =c(length[1], length[2]), xlab = "variant position", ylab = "densities")
-    lines(d1, col = "#0072B2") ## Homozygous
+    lines(d1$x, d1$y/adj, col = "#0072B2") ## Homozygous
     lines(d2, col = "#999999") ## Heterozygous
     lines(d3, col = "#D55E00", lwd =2) ## Homozygous/Heterozygous ratio
     axis(3, at=c(length[1], length[1]+diff(length)/2, length[2]), labels=c(1, diff(length)/2, diff(length)) )
