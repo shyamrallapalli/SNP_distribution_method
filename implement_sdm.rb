@@ -211,7 +211,7 @@ if pars['test']
 
 
   # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-  dic_ratios_inv  = RatioFilter.selected_ratios(original, threshold)
+  dic_ratios_inv  = RatioFilter.selected_ratios(original, adjust, false)
   File.open("#{log_folder}/t_10_dic_ratios_inv.yml", 'w') do |file|
     file.write dic_ratios_inv.to_yaml
   end
