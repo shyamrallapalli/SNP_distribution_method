@@ -5,21 +5,32 @@ require 'simple_stats'
 
 class Mutation
 
-  # Input 0: The average contig length
-  # Input 1: Array of homozygous (hm) or heterozygous (hm) or ratio (hm/ht) of SNPs per each contig.
-  # Output: A list of positions which represents the density of hm or ht or hm/ht ratios
+  # function to get separate array of cumulative variant positions and ratios
+  # input: a hash of frag ids with all details and variant positions
+  # hash input is resulted from varpos_aggregate method from Vcf class
+  # output: array of homozygous (hm) and heterozygous (ht) var positions and a false density to make hm/ht ratios
   def self.putative_density(outcome)
-    frags = outcome.keys
+    hm_list = []
+    ht_list = []
     positions = []
     cumulative_len = 0
-    frags.each do | frag |
+    outcome.each_key do | frag |
+      ht_list << outcome[frag][:ht_pos]
+      hmpos = outcome[frag][:hm_pos]
+      hm_list << hmpos
       cumulative_len += outcome[frag][:len].to_i
       ratio = outcome[frag][:ratio]
+      next if ratio < 0.1
       multiplier = (ratio * 10).to_i
-      next if multiplier == 0
-      positions << [cumulative_len] * multiplier
+      if hmpos.empty?
+        positions << [cumulative_len] * multiplier
+      else
+        hmpos.each do | pos |
+          positions << [pos] * multiplier
+        end
+      end
     end
-    positions.flatten!
+    [hm_list.flatten!, ht_list.flatten!, positions.flatten!]
   end
 
   # selected frags with likelihood of carrying mutation
@@ -37,17 +48,12 @@ class Mutation
 
   def self.density_plot(outcome, dir)
     # create arrays with the  SNP positions in the new ordered file.
-    snps_hm, snps_ht = Vcf.varpositions(outcome)
+    # generate experimental densities from ratios of the outcome order
+    snps_hm, snps_ht, exp_order_density = putative_density(outcome)
     FileRW.write_txt("#{dir}/perm_hm", snps_hm)
     FileRW.write_txt("#{dir}/perm_ht", snps_ht)
-
-    # generate experimental densities from ratios of the outcome order
-    exp_order_density = putative_density(outcome)
     FileRW.write_txt("#{dir}/perm_ratio", exp_order_density)
     n = outcome.length
-
-    # Find the peak in the approximated (hypothetical SNP) distribution
-    # candidate_snp = closest_snp(exp_order_density, snps_hm, n)
 
     Plot.densities(snps_hm, snps_ht, exp_order_density, dir, n)
     Plot.qqplot(snps_hm, dir, 'QQplot for hm density', 'Theoretical normal distribution', 'Hypothetical SNP density', 'hm_snps')

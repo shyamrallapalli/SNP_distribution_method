@@ -133,18 +133,4 @@ check that it is one sample vcf\n"
     details
   end
 
-  # function to get seperate array of cumulative variant positions
-  # input: a hash of frag ids with all details and variant positions
-  # hash input is resutled from varpos_aggregate method
-  # output: array of heterozygous and homozygous var positions
-  def self.varpositions(fragdetails)
-    hm_list = []
-    ht_list = []
-    fragdetails.keys.each { | frag |
-      hm_list << fragdetails[frag][:hm_pos]
-      ht_list << fragdetails[frag][:ht_pos]
-    }
-    [hm_list.flatten!, ht_list.flatten!]
-  end
-
 end
