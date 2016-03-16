@@ -142,7 +142,7 @@ while repeat < 3 do
   File.open("#{output_folder}/#{repeat}_mutation.txt", 'w+') do |f|
     # f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
     # f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
-    f.puts "Frag_homo_ratio\tnon_ref_ratio\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
+    f.puts "HMEscore\tAlleleFreq\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
     sortfrags.keys.sort.reverse.each do | ratio_1 |
       if ratio_1 >= 0.75
         sortfrags[ratio_1].each_key do | frag_1 |
@@ -189,8 +189,9 @@ puts '______________________'
 outcome = Vcf.varpos_aggregate(var_pos_new, inseq_len, sdm_frags, adjust)
 
 File.open("#{output_folder}/outcome_table.txt", 'w+') do |f|
+  f.puts "Frag_id\tHMEscore\tnum hm\tnum ht\tlength\tcumulative length\thm positions"
   outcome.each_key do |key|
-    f.puts "#{key}\t#{outcome[key][:ratio]}\t#{outcome[key][:hm]}\t#{outcome[key][:ht]}\t#{outcome[key][:len]}\t#{outcome[key][:hm_pos]}\n"
+    f.puts "#{key}\t#{outcome[key][:ratio]}\t#{outcome[key][:hm]}\t#{outcome[key][:ht]}\t#{outcome[key][:len]}\t#{outcome[frag][:cum_len]}\t#{outcome[key][:hm_pos]}"
   end
 end
 
