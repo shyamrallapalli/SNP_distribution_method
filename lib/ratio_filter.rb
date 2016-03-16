@@ -14,7 +14,7 @@ class RatioFilter
       end
     end
     last = inhash.length
-    warn "Discarded #{first-last} out of #{first} fragments\n"
+    warn "Discarded #{first-last} out of #{first} fragments, which lack any variant\n"
     inhash
   end
 

@@ -53,9 +53,9 @@ class Plot
     myr.eval 'pdf(paste(dir, "/experimental_densities.pdf", sep=""), width=7, height=3)
     par(cex.axis=0.5, cex.lab=0.8, cex.main=1, mar=c(2.5,2,1,0.2), oma=c(0,0,0,0), mgp=c(1, 0.3, 0))
     options(scipen = 10)
-    d1 <- density(hm, bw="bcv", kernel="gaussian")
-    d2 <- density(ht, bw="bcv", kernel="gaussian")
-    d3 <- density(ratio, bw="bcv", kernel="gaussian")
+    suppressWarnings(d1 <- density(hm, bw="bcv", kernel="gaussian"))
+    suppressWarnings(d2 <- density(ht, bw="bcv", kernel="gaussian"))
+    suppressWarnings(d3 <- density(ratio, bw="bcv", kernel="gaussian"))
     # limit the plot on x-axis based on variant position spread
     length <- range(hm, ht, ratio)
     # if the density peak is higher in hm density then adjust to reduce it

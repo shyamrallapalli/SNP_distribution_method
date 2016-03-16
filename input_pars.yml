@@ -21,3 +21,4 @@ ratio_adj: 0.5
 # cross is either back or out
 cross: out
 test: true
+frags_order: frags_order.txt
