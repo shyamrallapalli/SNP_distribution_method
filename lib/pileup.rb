@@ -13,8 +13,8 @@ class Pileup
     number = 0
     array.shift
     array.each do |element|
-      num = /^(\d+)[atgcATGC]/.match(element)[1].to_i
-      number += num
+      # deletions in reference could contain ambiguous codes,
+      number += /^(\d+)[acgtryswkmbdhvnACGTRYSWKMBDHVN]/.match(element)[1].to_i
     end
     number
   end
@@ -25,7 +25,15 @@ class Pileup
     read_bases = pileup.instance_variable_get(:@read_bases)
     # mapping quality after '^' symbol is substituted
     # to avoid splitting at non indel + or - characters
+    # end of the read marking '$' symbol is substituted
+    # insertion and deletion marking '*' symbol is substituted
     read_bases.gsub!(/\^./, '')
+    read_bases.gsub!(/\$/, '')
+    read_bases.gsub!(/\*/, '')
+    # warn about reads with ambiguous codes
+    if read_bases.match(/[^atgcATGC,\.\+\-0-9]/)
+      warn "Ambiguous nucleotide\t#{read_bases}"
+    end
     read_bases
   end
 
@@ -52,15 +60,18 @@ class Pileup
   # and calculate ratio of non_ref allele to total bases
   def self.get_nonref_ratio(read_bases)
     ref_count = read_bases.count('.,')
-    non_ref_count = read_bases.count('atgcATGC')
     if read_bases =~ /\+/
+      non_ref_count = read_bases.count('atgcnATGCN')
       pluscounts = read_bases.count('+')
       indel_bases = count_indels(read_bases, '+')
       non_ref_count += pluscounts - indel_bases
     elsif read_bases =~ /\-/
+      non_ref_count = read_bases.count('acgtryswkmbdhvnACGTRYSWKMBDHVN')
       minuscounts = read_bases.count('-')
       indel_bases = count_indels(read_bases, '-')
       non_ref_count += minuscounts - indel_bases
+    else
+      non_ref_count = read_bases.count('atgcATGC')
     end
     ratio = non_ref_count.to_f / (ref_count.to_f + non_ref_count.to_f)
     ratio
@@ -83,7 +94,9 @@ class Pileup
   def self.pick_frag_vars(mutbam,infasta,keyfrags,input_frags, var_pos, bgbam='')
     mut_bam = Bio::DB::Sam.new(:bam=>mutbam, :fasta=>infasta)
     mut_bam.open
-    if bgbam != ''
+    if bgbam == ''
+      bg_bam = ''
+    else
       bg_bam = Bio::DB::Sam.new(:bam=>bgbam, :fasta=>infasta)
       bg_bam.open
     end
