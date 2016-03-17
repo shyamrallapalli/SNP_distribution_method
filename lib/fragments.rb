@@ -50,8 +50,8 @@ class Fragments
   end
 
 
-  ##Input for sorting: inverted hash containing the normalised homozygous scores as key and the fragments' ids as value.
-  ##Output from sorting: perm is the permutation array containing the candidate order of contigs
+  # Input for sorting: inverted hash containing the normalised homozygous scores as key and the fragments' ids as value.
+  # Output from sorting: perm is the permutation array containing the candidate order of contigs
   # and mut is the array of candidate contigs taken from the central part of perm
   def self.arrange(ratios_hash, input_frags)
     right_or_left = 0
@@ -80,25 +80,11 @@ class Fragments
     perm
   end
 
-  def self.select_fragments(cross, ratios_hash, perm, adjust, threshold)
-
-    # set minimum cut off ratio to pick fragments with variants
-    # calculate min ratio for back or out crossed data
-    # and apply any threshold use applied
-    if cross == 'back'
-      min = (1.0/adjust) + 1.0
-    else
-      min = (2.0/adjust) + 1.0
-    end
-    maximum = ratios_hash.keys.max.to_f
-    range = maximum - min
-    thres = 100.0/threshold.to_f
-    cutoff = min + (range/thres)
-
-    # delete fragments which are below selected cutoff ratio
+  def self.select_fragments(ratios_hash, perm)
     frags_to_keep = []
     ratios_hash.each_key { | ratio |
-      if ratio >= cutoff
+      # store fragment id which have more homozygosity
+      if ratio > 1.0
         frags_to_keep << ratios_hash[ratio]
       end
     }
