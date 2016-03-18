@@ -114,7 +114,7 @@ while repeat < 3 do
 
   # ###[3]
   # #ratio of homozygous to heterozygous snps per each fragment is calculated (shuffled)
-  ratios_hash = RatioFilter.selected_ratios(input_frags, adjust)
+  ratios_hash = RatioFilter.selected_ratios(input_frags, adjust, :only_frag_with_vars => true)
   File.open("#{log_folder}/#{repeat}_3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
     file.write ratios_hash.to_yaml
   end
@@ -212,7 +212,7 @@ if pars['test']
 
 
   # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
-  dic_ratios_inv  = RatioFilter.selected_ratios(original, adjust, false)
+  dic_ratios_inv  = RatioFilter.selected_ratios(original, adjust, :only_frag_with_vars => false)
   File.open("#{log_folder}/t_10_dic_ratios_inv.yml", 'w') do |file|
     file.write dic_ratios_inv.to_yaml
   end
