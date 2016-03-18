@@ -1,6 +1,11 @@
-#encoding: utf-8
+# encoding: utf-8
 
 class Fragments
+
+  DEFAULT = {
+      filter_out_low_hmes: false,
+      cross: 'back',
+  }
 
   #shuffle the contigs with the minimum homozygous scores on the two halves of the expected normal distribution.
   #(1) If the number of contigs is even, half of the array goes to the left and half goes to the right part of the distribution
@@ -80,7 +85,10 @@ class Fragments
     perm
   end
 
-  def self.select_fragments(ratios_hash, perm, cross, adjust, filter_out_low_hmes=false)
+  def self.select_fragments(ratios_hash, perm, adjust, opts = {})
+    opts = DEFAULT.merge(opts)
+    filter_out_low_hmes = opts[:filter_out_low_hmes]
+    cross = opts[:cross]
     # set minimum cut off ratio to pick fragments with variants
     # calculate min hme score for back or out crossed data
     # if no filtering applied set cutoff to 1

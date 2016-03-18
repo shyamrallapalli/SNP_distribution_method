@@ -127,7 +127,7 @@ while repeat < 3 do
   sdm_frags = Fragments.arrange(ratios_hash, input_frags)
   FileRW.write_txt("#{log_folder}/#{repeat}_4_3_perm_ratio", sdm_frags)
 
-  sel_frags = Fragments.select_fragments(ratios_hash, sdm_frags, cross, adjust)
+  sel_frags = Fragments.select_fragments(ratios_hash, sdm_frags, adjust, :cross => cross, :filter_out_low_hmes => true)
   FileRW.write_txt("#{log_folder}/#{repeat}_4_5_selected_frags", sel_frags)
 
   sortfrags, var_pos_new = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, bg_bam)
