@@ -80,11 +80,24 @@ class Fragments
     perm
   end
 
-  def self.select_fragments(ratios_hash, perm)
+  def self.select_fragments(ratios_hash, perm, cross, adjust, filter_out_low_hmes=false)
+    # set minimum cut off ratio to pick fragments with variants
+    # calculate min hme score for back or out crossed data
+    # if no filtering applied set cutoff to 1
+    if filter_out_low_hmes
+      if cross == 'back'
+        cutoff = (1.0/adjust) + 1.0
+      else
+        cutoff = (2.0/adjust) + 1.0
+      end
+    else
+      cutoff = 1
+    end
+
     frags_to_keep = []
     ratios_hash.each_key { | ratio |
       # store fragment id which have more homozygosity
-      if ratio > 1.0
+      if ratio > cutoff
         frags_to_keep << ratios_hash[ratio]
       end
     }

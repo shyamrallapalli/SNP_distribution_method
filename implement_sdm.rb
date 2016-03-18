@@ -46,7 +46,7 @@ bg_pileup = pars['bg_pileup']
 
 adjust = pars['ratio_adj'].to_f
 threshold = pars['filter'].to_i
-# cross = pars['cross']
+cross = pars['cross']
 
 # Make Output directory
 output_folder = "#{pars['outdir']}_#{threshold}_#{adjust}"
@@ -127,7 +127,7 @@ while repeat < 3 do
   sdm_frags = Fragments.arrange(ratios_hash, input_frags)
   FileRW.write_txt("#{log_folder}/#{repeat}_4_3_perm_ratio", sdm_frags)
 
-  sel_frags = Fragments.select_fragments(ratios_hash, sdm_frags)
+  sel_frags = Fragments.select_fragments(ratios_hash, sdm_frags, cross, adjust)
   FileRW.write_txt("#{log_folder}/#{repeat}_4_5_selected_frags", sel_frags)
 
   sortfrags, var_pos_new = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, bg_bam)
