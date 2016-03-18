@@ -5,6 +5,12 @@ require 'bio-gngm'
 
 class Vcf
 
+  DEFAULT = {
+      ht_low: 0.25,
+      ht_high: 0.75,
+      cumulate: true,
+  }
+
   def self.get_allele_freq(vcf_obj)
     allele_freq = 0
     # check if the vcf is from samtools (has DP4 and AF1 fields in INFO)
@@ -58,7 +64,11 @@ check that it is one sample vcf\n"
 
   ##Input: vcf file
   ##Ouput: lists of hm and ht SNPS and hash of all fragments with variants
-  def self.get_vars(vcf_file, ht_low = 0.25, ht_high = 0.75)
+  def self.get_vars(vcf_file, opts = {})
+    opts = DEFAULT.merge(opts)
+    ht_low = opts[:ht_low]
+    ht_high = opts[:ht_high]
+
     # hash of :het and :hom with frag ids and respective variant positions
     var_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     File.open(vcf_file, 'r').each do |line|
@@ -102,7 +112,10 @@ check that it is one sample vcf\n"
   # input4: ratio adjustment factor
   # output: a hash of frag ids with all details and variant positions
   # are accumulated using length and order of fragments
-  def self.varpos_aggregate(frag_info, frag_len, frag_order, ratio_adjust, cumulate='yes')
+  def self.varpos_aggregate(frag_info, frag_len, frag_order, ratio_adjust,  opts = {})
+    opts = DEFAULT.merge(opts)
+    cumulate = opts[:cumulate]
+
     details = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     cumulate_len = 0
     frag_order.each { | frag |
@@ -127,7 +140,7 @@ check that it is one sample vcf\n"
         details[frag][:ratio] = details[frag][:hm]/details[frag][:ht]
       end
       details[frag][:len] = frag_len[frag].to_i
-      if cumulate == 'yes'
+      if cumulate
         cumulate_len += frag_len[frag].to_i
       end
     }

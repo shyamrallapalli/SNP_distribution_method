@@ -72,7 +72,7 @@ if bg_vcf == '' and bg_pileup == ''
   if mut_pileup != ''
     # do something with only mut pileup file
   elsif mut_vcf != ''
-    var_pos = Vcf.get_vars(mut_vcf)
+    var_pos = Vcf.get_vars(mut_vcf, :ht_low => 0.25, :ht_high => 0.75)
   else
     warn 'nothing to do here, provide me pileup or vcf file'
     exit
@@ -107,7 +107,7 @@ sdm_frags = ''
 new_mut_frags = ''
 repeat = 1
 while repeat < 3 do
-  input_frags = Vcf.varpos_aggregate(var_pos, inseq_len, ids, adjust, 'no')
+  input_frags = Vcf.varpos_aggregate(var_pos, inseq_len, ids, adjust, :cumulate => false)
   File.open("#{log_folder}/#{repeat}_t_17_input_frags.yml", 'w') do |file|
     file.write input_frags.to_yaml
   end
