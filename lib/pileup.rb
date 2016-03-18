@@ -5,6 +5,15 @@ require 'bio-gngm'
 
 class Pileup
 
+  DEFAULT = {
+      bgbam: '',
+      bq: 15,
+      mq: 20,
+      ignore_reference_n: true,
+      min_depth: 6,
+      min_non_ref_count: 3,
+  }
+
   # count bases from indels
   # array of pileup bases is split at + / -
   # and number after each + / - is counted
@@ -78,21 +87,36 @@ class Pileup
     ratio
   end
 
-  def self.get_bg_ratio(bg_bam,selfrag,mutpos)
+  def self.get_bg_ratio(bg_bam,selfrag,mutpos, opts = {})
+    opts = DEFAULT.merge(opts)
+    ignore_reference_n = opts[:ignore_reference_n]
+    min_depth  = opts[:min_depth]
+    min_non_ref_count = opts[:min_non_ref_count]
+    bq = opts[:bq]
+    mq = opts[:mq]
+
     bg_ratio = ''
-    bg_pileups = get_pileup(bg_bam,selfrag,mutpos)
+    bg_pileups = get_pileup(bg_bam,selfrag,mutpos, bq, mq)
     if bg_pileups.empty?
       return bg_ratio
     end
     pileup = bg_pileups[0]
-    if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
+    if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count)
       read_bases = get_read_bases(pileup)
       bg_ratio = get_nonref_ratio(read_bases)
     end
     bg_ratio
   end
 
-  def self.pick_frag_vars(mutbam,infasta,keyfrags,input_frags, var_pos, bgbam='')
+  def self.pick_frag_vars(mutbam,infasta,keyfrags,input_frags, var_pos, opts = {})
+    opts = DEFAULT.merge(opts)
+    ignore_reference_n = opts[:ignore_reference_n]
+    min_depth  = opts[:min_depth]
+    min_non_ref_count = opts[:min_non_ref_count]
+    bgbam = opts[:bgbam]
+    bq = opts[:bq]
+    mq = opts[:mq]
+
     mut_bam = Bio::DB::Sam.new(:bam=>mutbam, :fasta=>infasta)
     mut_bam.open
     if bgbam == ''
@@ -105,12 +129,12 @@ class Pileup
     keyfrags.each do | selfrag |
       positions = input_frags[selfrag][:hm_pos]
       positions.each do | mutpos |
-        pileups = get_pileup(mut_bam,selfrag,mutpos)
+        pileups = get_pileup(mut_bam,selfrag,mutpos, bq, mq)
         if pileups.empty?
           next
         end
         pileup = pileups[0]
-        if pileup.is_snp?(:ignore_reference_n => true, :min_depth => 6, :min_non_ref_count => 3)
+        if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count)
           read_bases = get_read_bases(pileup)
           ratio = get_nonref_ratio(read_bases)
           if bgbam != ''
@@ -138,7 +162,7 @@ class Pileup
   # there seems to be a location difference between vcf files and mpileup output
   # so moving upstream in position to get these var info
   # and not going further than 10bp upstream (10bp is arbitrary and this needs verification)
-  def self.get_pileup(bamobject,id,pos1, bq=15, mq=20)
+  def self.get_pileup(bamobject,id,pos1, bq, mq)
     # a variable to store initial position of var
     initial_pos = pos1
     pileuparray = []
@@ -151,7 +175,7 @@ class Pileup
     pos_diff = initial_pos - pos1
     if pileuparray[0].to_s =~ /^\t0/ and pos_diff <= 10 and pos1 > 1
       pos1 = pos1 - 1
-      pileuparray = get_pileup(bamobject,id,pos1)
+      pileuparray = get_pileup(bamobject,id,pos1, bq, mq)
     # if the difference is larger than 10 bp then set up pileup information as null
     elsif pileuparray[0].to_s =~ /^\t0/ and pos_diff > 10
       pileuparray = []

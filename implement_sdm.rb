@@ -130,7 +130,8 @@ while repeat < 3 do
   sel_frags = Fragments.select_fragments(ratios_hash, sdm_frags, adjust, :cross => cross, :filter_out_low_hmes => true)
   FileRW.write_txt("#{log_folder}/#{repeat}_4_5_selected_frags", sel_frags)
 
-  sortfrags, var_pos_new = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, bg_bam)
+  sortfrags, var_pos_new = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, :bg_bam => bg_bam,
+                                                 :bq => 15, :mq => 20, :min_depth => 6, :min_non_ref_count => 3)
   File.open("#{log_folder}/#{repeat}_4_6_sortfrags.yml", 'w') do |file|
     file.write sortfrags.to_yaml
   end
