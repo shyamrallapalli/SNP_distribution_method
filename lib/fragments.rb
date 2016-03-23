@@ -99,13 +99,13 @@ class Fragments
         cutoff = (2.0/adjust) + 1.0
       end
     else
-      cutoff = 1
+      cutoff = 1.1
     end
 
     frags_to_keep = []
     ratios_hash.each_key { | ratio |
       # store fragment id which have more homozygosity
-      if ratio > cutoff
+      if ratio >= cutoff
         frags_to_keep << ratios_hash[ratio]
       end
     }

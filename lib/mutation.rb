@@ -84,8 +84,8 @@ class Mutation
 
     original_pos, outcome_pos = adjusted_positions(mut_frags, original, outcome)
     region = mean_contig_len * outcome.keys.length
-    ylim = Plot.get_ylim(exp_order_density, region)
-    Plot.comparison(real_order_density, exp_order_density, genome_len, dir, ylim, original_pos, outcome_pos)
+    ylim = Plot.get_ylim(exp_order_density[2], region)
+    Plot.comparison(real_order_density[2], exp_order_density[2], genome_len, dir, ylim, original_pos, outcome_pos)
   end
 
 end
