@@ -199,6 +199,30 @@ Mutation.density_plot(outcome, output_folder)
 # Create FASTA file for the fragments selected to host mutation
 filename = "selected_frags_thres#{threshold}.fasta"
 FileRW.write_order(new_mut_frags, fasta_shuffle, filename)
+@reference_db = Bio::DB::Fasta::FastaFile.new({:fasta=>filename})
+
+File.open("#{output_folder}/selected_variants.txt", 'w+') do |f|
+  f.puts "HMEscore\tAlleleFreq\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals\tsequence_region"
+  sortfrags.keys.sort.reverse.each do | ratio_1 |
+    if ratio_1 >= 0.75
+      sortfrags[ratio_1].each_key do | frag_1 |
+        sortfrags[ratio_1][frag_1].each_key do | pos_1 |
+          line = sortfrags[ratio_1][frag_1][pos_1].to_s
+          pileup = Bio::DB::Pileup.new(line)
+          frag_len =input_frags[frag_1][:len]
+          low = pos_1-51 <= 0 ? 0 : pos_1-51
+          high = pos_1+51 >= frag_len ? frag_len : pos_1+51
+          region = Bio::DB::Fasta::Region.parse_region("#{frag_1}:#{low}-#{pos_1-1}")
+          seq = @reference_db.fetch_sequence(region)
+          seq << "[#{pileup.consensus}/#{pileup.ref_base}]"
+          region = Bio::DB::Fasta::Region.parse_region("#{frag_1}:#{pos_1+1}-#{high}")
+          seq << @reference_db.fetch_sequence(region)
+          f.puts "#{input_frags[frag_1][:ratio]}\t#{ratio_1}\t#{line}\t#{seq}"
+        end
+      end
+    end
+  end
+end
 
 ########## Test comparison inputs and analysis and comparison
 
