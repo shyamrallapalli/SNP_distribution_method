@@ -2,6 +2,7 @@
 require 'bio'
 require 'bio-samtools'
 require 'bio-gngm'
+require 'yaml'
 
 class FileRW
 
@@ -24,6 +25,17 @@ class FileRW
   # Input 1: Array to save
   def self.write_txt(filename, array)
     write("#{filename}.txt", array)
+  end
+
+  # deep copy hash
+  def self.deep_copy_hash(in_hash)
+    tempname = Time.now.to_f.to_s + '.yml'
+    File.open("#{tempname}", 'w') do |file|
+      file.write in_hash.to_yaml
+    end
+    out_hash = YAML.load_file(tempname)
+    %x[rm #{tempname}]
+    out_hash
   end
 
   # Input: FASTA file

@@ -102,7 +102,8 @@ ids = inseq_len.keys
 genome_length = inseq_len.values.inject { | sum, n | sum + n }
 average_contig = genome_length / ids.length
 
-var_pos_new = ''
+var_pos_orig = FileRW.deep_copy_hash(var_pos)
+input_frags = ''
 sdm_frags = ''
 new_mut_frags = ''
 repeat = 1
@@ -130,7 +131,8 @@ while repeat < 3 do
   sel_frags = Fragments.select_fragments(ratios_hash, sdm_frags, adjust, :cross => cross, :filter_out_low_hmes => true)
   FileRW.write_txt("#{log_folder}/#{repeat}_4_5_selected_frags", sel_frags)
 
-  sortfrags, var_pos_new = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, :bg_bam => bg_bam,
+  # remove below par snps and update var_pos hash for second iteration
+  sortfrags, var_pos = Pileup.pick_frag_vars(mut_bam,fasta_shuffle,sel_frags,input_frags,var_pos, :bgbam => bg_bam,
                                                  :bq => 15, :mq => 20, :min_depth => 6, :min_non_ref_count => 3)
   File.open("#{log_folder}/#{repeat}_4_6_sortfrags.yml", 'w') do |file|
     file.write sortfrags.to_yaml
@@ -138,11 +140,7 @@ while repeat < 3 do
 
   new_mut_frags = []
   mut_frags_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-  # #Plot expected vs SDM ratios, QQplots
-  # candidate_frag_vars = Mutation.get_candidates(mut_frags, var_pos[:hom])
   File.open("#{output_folder}/#{repeat}_mutation.txt", 'w+') do |f|
-    # f.puts "The length of the group of contigs that form the peak of the distribution is #{region.to_i} bp"
-    # f.puts "The mutation is likely to be found on the following contigs #{candidate_frag_vars}"
     f.puts "HMEscore\tAlleleFreq\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
     sortfrags.keys.sort.reverse.each do | ratio_1 |
       if ratio_1 >= 0.75
@@ -163,10 +161,10 @@ while repeat < 3 do
   # delete positions in the selected fragments that didn't pass the filtering
   mut_frags_pos.each_key do | fragment |
     selected_pos = mut_frags_pos[fragment].keys
-    var_pos_new[:hom][fragment].each do | varpos |
+    var_pos[:hom][fragment].each do | varpos |
       unless selected_pos.include?(varpos)
         warn "#{fragment}\t#{varpos}\n"
-        var_pos_new[:hom][fragment].delete(varpos)
+        var_pos[:hom][fragment].delete(varpos)
       end
     end
   end
@@ -187,7 +185,7 @@ puts '______________________'
 # ###[6] Plots
 
 # do the pos aggregation after trimming filtered positions
-outcome = Vcf.varpos_aggregate(var_pos_new, inseq_len, sdm_frags, adjust)
+outcome = Vcf.varpos_aggregate(var_pos, inseq_len, sdm_frags, adjust)
 
 File.open("#{output_folder}/outcome_table.txt", 'w+') do |f|
   f.puts "Frag_id\tHMEscore\tnum hm\tnum ht\tlength\tcumulative length\thm positions"
@@ -209,7 +207,7 @@ if pars['test']
   frags_order = pars['frags_order']
   ids_ok = FileRW.to_array(frags_order)
 
-  original = Vcf.varpos_aggregate(var_pos, inseq_len, ids_ok, adjust)
+  original = Vcf.varpos_aggregate(var_pos_orig, inseq_len, ids_ok, adjust)
 
 
   # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)
