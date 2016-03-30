@@ -72,15 +72,17 @@ if bg_vcf == '' and bg_pileup == ''
   if mut_pileup != ''
     # do something with only mut pileup file
   elsif mut_vcf != ''
-    var_pos = Vcf.get_vars(mut_vcf, :ht_low => 0.25, :ht_high => 0.75)
+    var_pos = Vcf.get_vars(mut_vcf, :ht_low => 0.1, :ht_high => 0.9)
   else
     warn 'nothing to do here, provide me pileup or vcf file'
     exit
   end
 else
   if mut_pileup != '' and bg_pileup != ''
-    vars_bg = Polyploid.vars_in_pileup(bg_pileup)
-    var_pos = Polyploid.filter_vars(mut_pileup, vars_bg)
+    vars_bg = Polyploid.vars_in_pileup(bg_pileup,
+                                       :min_depth => 6, :min_non_ref_count => 3)
+    var_pos = Polyploid.filter_vars(mut_pileup, vars_bg, :ht_low => 0.1, :ht_high => 0.9, :polyploidy => false,
+                                    :noise => 0.1, :min_depth => 6, :min_non_ref_count => 3)
   elsif mut_vcf != '' and bg_vcf != ''
     var_pos = Vcf.filtering(mut_vcf, bg_vcf)
   else
