@@ -176,10 +176,10 @@ class Polyploid
             vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
           end
         elsif data1.instance_of? String
-          mut_ratio = Pileup.get_nonref_ratio(data1)
+          mut_ratio = Pileup.get_nonref_ratio_indel(data1)
           mut_type = var_mode(mut_ratio)
           if vars_hash_bg[frag].key?(pos) and vars_hash_bg[frag][pos].instance_of? String
-            bg_ratio = Pileup.get_nonref_ratio(vars_hash_bg[frag][pos])
+            bg_ratio = Pileup.get_nonref_ratio_indel(vars_hash_bg[frag][pos])
             bg_type = var_mode(bg_ratio)
             next if mut_type == bg_type
             vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)

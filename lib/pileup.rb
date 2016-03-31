@@ -68,7 +68,7 @@ class Pileup
 
   # count bases matching reference and non-reference
   # and calculate ratio of non_ref allele to total bases
-  def self.get_nonref_ratio(read_bases)
+  def self.get_nonref_ratio_indel(read_bases)
     ref_count = read_bases.count('.,')
     if read_bases =~ /\+/
       non_ref_count = read_bases.count('atgcnATGCN')
@@ -103,7 +103,7 @@ class Pileup
     pileup = bg_pileups[0]
     if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count)
       read_bases = get_read_bases(pileup)
-      bg_ratio = get_nonref_ratio(read_bases)
+      bg_ratio = get_nonref_ratio_indel(read_bases)
     end
     bg_ratio
   end
@@ -136,7 +136,7 @@ class Pileup
         pileup = pileups[0]
         if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count)
           read_bases = get_read_bases(pileup)
-          ratio = get_nonref_ratio(read_bases)
+          ratio = get_nonref_ratio_indel(read_bases)
           if bgbam != ''
             bg_ratio = get_bg_ratio(bg_bam,selfrag,mutpos)
             if bg_ratio == ''
