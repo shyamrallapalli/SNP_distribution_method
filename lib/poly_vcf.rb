@@ -65,21 +65,21 @@ class Polyploid
 
   # calculate var zygosity for non-polyploid variants
   # increased range is used for heterozygosity for RNA-seq data
-  def self.var_mode(ratio, ht_low = @ht_low, ht_high = @ht_high)
+  def self.var_mode(ratio)
     mode = ''
-    if ratio.between?(ht_low, ht_high)
+    if ratio.between?(@ht_low, @ht_high)
       mode = :het
-    elsif ratio > ht_high
+    elsif ratio > @ht_high
       mode = :hom
     end
     mode
   end
 
   # get total proportion of bases in hash
-  def self.polybase_proportion(vars, hash, polyploidy = @polyploidy)
+  def self.polybase_proportion(vars, hash)
     # if polyploidy set then take combination of proportions
     # if not then take maximum value
-    if polyploidy
+    if @polyploidy
       prop = 0.0
       hash.each_key { | key |
         if vars.include?(key)
