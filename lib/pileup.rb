@@ -46,29 +46,53 @@ class Pileup
     read_bases
   end
 
+  def self.basehash_counts(read_bases)
+    bases_hash = {}
+    bases_hash[:ref] = read_bases.count('.,')
+    bases_hash[:A] = read_bases.count('aA')
+    bases_hash[:C] = read_bases.count('cC')
+    bases_hash[:G] = read_bases.count('gG')
+    bases_hash[:T] = read_bases.count('tT')
+    bases_hash[:N] = read_bases.count('nN')
+    bases_hash
+  end
+
+  # count number of indels and number non-indel base
+  # and return a hash with bases and indel counts
+  def self.indels_to_hash(read_bases, delimiter)
+    indel_bases = 'acgtryswkmbdhvnACGTRYSWKMBDHVN'
+    non_indel_bases = String.new
+    array = read_bases.split(delimiter)
+    indel_count = array.length - 1
+    non_indel_bases << array.shift
+    array.each do |element|
+      # get number of nucleotides inserted or deleted
+      number = /^(\d+)[#{indel_bases}]/.match(element)[1].to_i
+      # capture remaining nucleotides
+      non_indel_bases << element.gsub(/^#{number}\w{#{number}}/, '')
+    end
+    bases_hash = basehash_counts(non_indel_bases)
+    bases_hash[:indel] = indel_count
+    bases_hash
+  end
+
   # count bases matching reference and non-reference
   # from snp variant and make a hash of bases with counts
   # for indels return the read bases information instead
   def self.read_bases_to_hash(read_bases)
-    bases_hash = {}
     if read_bases =~ /\+/
-      return read_bases
+      bases_hash = indels_to_hash(read_bases, '+')
     elsif read_bases =~ /\-/
-      return read_bases
+      bases_hash = indels_to_hash(read_bases, '-')
     else
-      bases_hash[:ref] = read_bases.count('.,')
-      bases_hash[:A] = read_bases.count('aA')
-      bases_hash[:C] = read_bases.count('cC')
-      bases_hash[:G] = read_bases.count('gG')
-      bases_hash[:T] = read_bases.count('tT')
-      bases_hash[:N] = read_bases.count('nN')
+      bases_hash = basehash_counts(read_bases)
     end
     bases_hash
   end
 
   # count bases matching reference and non-reference
   # and calculate ratio of non_ref allele to total bases
-  def self.get_nonref_ratio_indel(read_bases)
+  def self.get_nonref_ratio(read_bases)
     ref_count = read_bases.count('.,')
     if read_bases =~ /\+/
       non_ref_count = read_bases.count('atgcnATGCN')
@@ -103,7 +127,7 @@ class Pileup
     pileup = bg_pileups[0]
     if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count)
       read_bases = get_read_bases(pileup)
-      bg_ratio = get_nonref_ratio_indel(read_bases)
+      bg_ratio = get_nonref_ratio(read_bases)
     end
     bg_ratio
   end
@@ -136,7 +160,7 @@ class Pileup
         pileup = pileups[0]
         if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count)
           read_bases = get_read_bases(pileup)
-          ratio = get_nonref_ratio_indel(read_bases)
+          ratio = get_nonref_ratio(read_bases)
           if bgbam != ''
             bg_ratio = get_bg_ratio(bg_bam,selfrag,mutpos)
             if bg_ratio == ''
