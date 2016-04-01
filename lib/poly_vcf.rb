@@ -167,27 +167,12 @@ class Polyploid
         data1 = Pileup.read_bases_to_hash(read_bases)
         frag = pileup.ref_name
         pos = pileup.pos
-        if data1.instance_of? Hash
-          mut_bases = get_var_base_prop(data1, min_depth, noise)
-          if vars_hash_bg[frag].key?(pos) and vars_hash_bg[frag][pos].instance_of? Hash
-            bg_bases = get_var_base_prop(vars_hash_bg[frag][pos], min_depth, noise)
-            vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos, bg_bases)
-          else
-            vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
-          end
-        elsif data1.instance_of? String
-          mut_ratio = Pileup.get_nonref_ratio_indel(data1)
-          mut_type = var_mode(mut_ratio)
-          if vars_hash_bg[frag].key?(pos) and vars_hash_bg[frag][pos].instance_of? String
-            bg_ratio = Pileup.get_nonref_ratio_indel(vars_hash_bg[frag][pos])
-            bg_type = var_mode(bg_ratio)
-            next if mut_type == bg_type
-            vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
-          else
-            vars_hash = Vcf.push_to_hash(vars_hash, frag, pos, mut_type)
-          end
+        mut_bases = get_var_base_prop(data1, min_depth, noise)
+        if vars_hash_bg[frag].key?(pos)
+          bg_bases = get_var_base_prop(vars_hash_bg[frag][pos], min_depth, noise)
+          vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos, bg_bases)
         else
-          warn "I don't know the type\t#{data1.class}"
+          vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
         end
       end
     end
