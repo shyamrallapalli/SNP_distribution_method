@@ -5,7 +5,7 @@ require 'bio-gngm'
 
 class Polyploid
 
-  attr_accessor :polyploidy, :ht_low, :ht_high
+  attr_accessor :polyploidy, :ht_low, :ht_high, :min_depth, :noise
 
   DEFAULT = {
       ignore_reference_n: true,
@@ -49,15 +49,15 @@ class Polyploid
   # a hash of base proportion is calculated
   # base proportion hash below a selected depth is empty
   # base proportion below or equal to a noise factor are discarded
-  def self.get_var_base_prop(hash, depth, noise)
+  def self.get_var_base_prop(hash)
     snp_hash = {}
     coverage = hash.values.inject { | sum, n | sum + n.to_f }
-    return snp_hash if coverage < depth
+    return snp_hash if coverage < @min_depth
     # calculate proportion of each base in coverage
     hash.each_key do | base |
       next if base == :ref
       freq = hash[base].to_f/coverage
-      next if freq <= noise
+      next if freq <= @noise
       snp_hash[base] = freq
     end
     snp_hash
@@ -150,9 +150,9 @@ class Polyploid
   def self.filter_vars(mut_pileup, vars_hash_bg, opts = {})
   opts = DEFAULT.merge(opts)
   ignore_reference_n = opts[:ignore_reference_n]
-  min_depth  = opts[:min_depth]
   min_non_ref_count = opts[:min_non_ref_count]
-  noise = opts[:noise]
+  @min_depth  = opts[:min_depth]
+  @noise = opts[:noise]
   @polyploidy = opts[:polyploidy]
   @ht_low = opts[:ht_low]
   @ht_high  = opts[:ht_high]
@@ -161,15 +161,15 @@ class Polyploid
     # read mpileup file and process each variant
     File.open(mut_pileup, 'r').each do |line|
       pileup = Bio::DB::Pileup.new(line)
-      if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count) and
+      if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => @min_depth, :min_non_ref_count => min_non_ref_count) and
           pileup.consensus != pileup.ref_base
         read_bases = Pileup.get_read_bases(pileup)
         data1 = Pileup.read_bases_to_hash(read_bases)
         frag = pileup.ref_name
         pos = pileup.pos
-        mut_bases = get_var_base_prop(data1, min_depth, noise)
+        mut_bases = get_var_base_prop(data1)
         if vars_hash_bg[frag].key?(pos)
-          bg_bases = get_var_base_prop(vars_hash_bg[frag][pos], min_depth, noise)
+          bg_bases = get_var_base_prop(vars_hash_bg[frag][pos])
           vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos, bg_bases)
         else
           vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)

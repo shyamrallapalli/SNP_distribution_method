@@ -5,6 +5,8 @@ require 'bio-gngm'
 
 class Pileup
 
+  attr_accessor :min_indel_count_support
+
   DEFAULT = {
       bgbam: '',
       bq: 15,
@@ -12,6 +14,7 @@ class Pileup
       ignore_reference_n: true,
       min_depth: 6,
       min_non_ref_count: 3,
+      min_indel_count_support: 3,
   }
 
   # count bases from indels
@@ -40,9 +43,9 @@ class Pileup
     read_bases.gsub!(/\$/, '')
     read_bases.gsub!(/\*/, '')
     # warn about reads with ambiguous codes
-    if read_bases.match(/[^atgcATGC,\.\+\-0-9]/)
-      warn "Ambiguous nucleotide\t#{read_bases}"
-    end
+    # if read_bases.match(/[^atgcATGC,\.\+\-0-9]/)
+    #   warn "Ambiguous nucleotide\t#{read_bases}"
+    # end
     read_bases
   end
 
@@ -72,7 +75,10 @@ class Pileup
       non_indel_bases << element.gsub(/^#{number}\w{#{number}}/, '')
     end
     bases_hash = basehash_counts(non_indel_bases)
-    bases_hash[:indel] = indel_count
+    # check at least three reads are supporting indel
+    if indel_count >= @min_indel_count_support
+      bases_hash[:indel] = indel_count
+    end
     bases_hash
   end
 
@@ -140,6 +146,7 @@ class Pileup
     bgbam = opts[:bgbam]
     bq = opts[:bq]
     mq = opts[:mq]
+    @min_indel_count_support = opts[:min_indel_count_support]
 
     mut_bam = Bio::DB::Sam.new(:bam=>mutbam, :fasta=>infasta)
     mut_bam.open
