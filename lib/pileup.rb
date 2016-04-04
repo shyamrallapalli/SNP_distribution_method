@@ -236,13 +236,13 @@ class Pileup
   # a hash of base proportion is calculated
   # base proportion hash below a selected depth is empty
   # base proportion below or equal to a noise factor are discarded
-  def self.get_var_base_prop(hash)
+  def self.get_var_base_frac(hash)
     snp_hash = {}
     coverage = hash.values.inject { | sum, n | sum + n.to_f }
     return snp_hash if coverage < @min_depth
     # calculate proportion of each base in coverage
     hash.each_key do | base |
-      next if base == :ref
+      # next if base == :ref
       freq = hash[base].to_f/coverage
       next if freq <= @noise
       snp_hash[base] = freq
@@ -310,9 +310,9 @@ class Pileup
         data1 = Pileup.read_bases_to_hash(read_bases)
         frag = pileup.ref_name
         pos = pileup.pos
-        mut_bases = get_var_base_prop(data1)
+        mut_bases = get_var_base_frac(data1)
         if vars_hash_bg[frag].key?(pos)
-          bg_bases = get_var_base_prop(vars_hash_bg[frag][pos])
+          bg_bases = get_var_base_frac(vars_hash_bg[frag][pos])
           vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos, bg_bases)
         else
           vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
@@ -326,6 +326,7 @@ class Pileup
     # we are only dealing with single element hashes
     # so discard hashes with more than one element and empty hashes
     # empty hash results from position below selected coverage or bases freq below noise
+    base_hash.delete(:ref)
     return store_hash if base_hash.empty?
     if base_hash.length > 1
       vartype = multi_var_hash(base_hash, background)
