@@ -5,7 +5,8 @@ require 'bio-gngm'
 
 class Pileup
 
-  attr_accessor :min_indel_count_support
+  attr_accessor :min_indel_count_support, :ht_low, :ht_high, :noise
+  attr_accessor :ignore_reference_n, :min_non_ref_count, :min_depth
 
   DEFAULT = {
       bgbam: '',
@@ -15,21 +16,23 @@ class Pileup
       min_depth: 6,
       min_non_ref_count: 3,
       min_indel_count_support: 3,
+      noise: 0.1,
+      ht_low: 0.2,
+      ht_high: 0.9,
   }
 
-  # count bases from indels
-  # array of pileup bases is split at + / -
-  # and number after each + / - is counted
-  def self.count_indels(read_bases, delimiter)
-    array = read_bases.split(delimiter)
-    number = 0
-    array.shift
-    array.each do |element|
-      # deletions in reference could contain ambiguous codes,
-      number += /^(\d+)[acgtryswkmbdhvnACGTRYSWKMBDHVN]/.match(element)[1].to_i
+  # check if the pileup has the parameters we are looking for
+  # if not return empty string
+  def self.check_pileup(pileup)
+      if pileup.is_snp?(:ignore_reference_n => ignore_reference_n,
+                        :min_depth => min_depth,
+                        :min_non_ref_count => min_non_ref_count) and
+          pileup.consensus != pileup.ref_base
+        pileup
+      else
+        ''
+      end
     end
-    number
-  end
 
   # get read bases from pileup object
   # removes mapping quality information
@@ -96,6 +99,20 @@ class Pileup
     bases_hash
   end
 
+  # count bases from indels
+  # array of pileup bases is split at + / -
+  # and number after each + / - is counted
+  def self.count_indels(read_bases, delimiter)
+    array = read_bases.split(delimiter)
+    number = 0
+    array.shift
+    array.each do |element|
+      # deletions in reference could contain ambiguous codes,
+      number += /^(\d+)[acgtryswkmbdhvnACGTRYSWKMBDHVN]/.match(element)[1].to_i
+    end
+    number
+  end
+
   # count bases matching reference and non-reference
   # and calculate ratio of non_ref allele to total bases
   def self.get_nonref_ratio(read_bases)
@@ -127,14 +144,11 @@ class Pileup
 
     bg_ratio = ''
     bg_pileups = get_pileup(bg_bam,selfrag,mutpos, bq, mq)
-    if bg_pileups.empty?
-      return bg_ratio
-    end
-    pileup = bg_pileups[0]
-    if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count)
-      read_bases = get_read_bases(pileup)
-      bg_ratio = get_nonref_ratio(read_bases)
-    end
+    return bg_ratio if bg_pileups.empty?
+    pileup = check_pileup(bg_pileups[0])
+    return bg_ratio if pileup == ''
+    read_bases = get_read_bases(pileup)
+    bg_ratio = get_nonref_ratio(read_bases)
     bg_ratio
   end
 
