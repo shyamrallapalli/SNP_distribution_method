@@ -79,9 +79,9 @@ if bg_vcf == '' and bg_pileup == ''
   end
 else
   if mut_pileup != '' and bg_pileup != ''
-    vars_bg = Polyploid.vars_in_pileup(bg_pileup,
+    vars_bg = Pileup.vars_in_pileup(bg_pileup,
                                        :min_depth => 6, :min_non_ref_count => 3)
-    var_pos = Polyploid.filter_vars(mut_pileup, vars_bg, :ht_low => 0.1, :ht_high => 0.9, :polyploidy => false,
+    var_pos = Pileup.filter_vars(mut_pileup, vars_bg, :ht_low => 0.1, :ht_high => 0.9, :polyploidy => false,
                                     :noise => 0.1, :min_depth => 6, :min_non_ref_count => 3)
   elsif mut_vcf != '' and bg_vcf != ''
     var_pos = Vcf.filtering(mut_vcf, bg_vcf)
@@ -163,7 +163,7 @@ while repeat < 3 do
   # delete positions in the selected fragments that didn't pass the filtering
   mut_frags_pos.each_key do | fragment |
     selected_pos = mut_frags_pos[fragment].keys
-    var_pos[:hom][fragment].each do | varpos |
+    var_pos[:hom][fragment].each_key do | varpos |
       unless selected_pos.include?(varpos)
         warn "#{fragment}\t#{varpos}\n"
         var_pos[:hom][fragment].delete(varpos)

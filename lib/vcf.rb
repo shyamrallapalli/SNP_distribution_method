@@ -83,14 +83,15 @@ check that it is one sample vcf\n"
 
     var_pos_mut.each_key do | type |
       var_pos_mut[type].each_key do | frag |
-        positions = var_pos_mut[type][frag]
-        parent_pos = var_pos_bg[type][frag]
-        positions.delete_if { | pos | parent_pos.include?(pos) }
-        if positions.empty?
-          var_pos_mut[type].delete(frag)
-        else
-          var_pos_mut[type][frag] = positions
+        positions = var_pos_mut[type][frag].keys
+        pos_bg_bulk = var_pos_bg[type][frag].keys
+        positions.each do |pos|
+          if pos_bg_bulk.include?(pos)
+            var_pos_mut[type][frag].delete(pos)
+            positions.delete(pos)
+          end
         end
+        var_pos_mut[type].delete(frag) if positions.empty?
       end
     end
     var_pos_mut
@@ -116,12 +117,12 @@ check that it is one sample vcf\n"
       details[frag][:ht_pos] = []
       details[frag][:cum_len] = cumulate_len
       if frag_info[:hom].key?(frag)
-        hm_pos = frag_info[:hom][frag]
+        hm_pos = frag_info[:hom][frag].keys
         details[frag][:hm] += hm_pos.length
         details[frag][:hm_pos] = hm_pos.map { |position| position + cumulate_len }
       end
       if frag_info[:het].key?(frag)
-        ht_pos = frag_info[:het][frag]
+        ht_pos = frag_info[:het][frag].keys
         details[frag][:ht] += ht_pos.length
         details[frag][:ht_pos] = ht_pos.map { |position| position + cumulate_len }
       end
