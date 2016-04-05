@@ -19,6 +19,7 @@ class Pileup
       noise: 0.1,
       ht_low: 0.2,
       ht_high: 0.9,
+      parent_hemi_hash: '',
   }
 
   # check if the pileup has the parameters we are looking for
@@ -290,7 +291,7 @@ class Pileup
     vars_hash
   end
 
-  def self.filter_vars(mut_pileup, vars_hash_bg, opts = {})
+  def self.filter_vars(mut_pileup, bg_bulk_pileup_hash, opts = {})
     opts = DEFAULT.merge(opts)
     ignore_reference_n = opts[:ignore_reference_n]
     min_non_ref_count = opts[:min_non_ref_count]
@@ -299,6 +300,7 @@ class Pileup
     @polyploidy = opts[:polyploidy]
     @ht_low = opts[:ht_low]
     @ht_high  = opts[:ht_high]
+    @parent_hemi_hash = opts[:parent_hemi_hash]
 
     vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     # read mpileup file and process each variant
@@ -306,20 +308,38 @@ class Pileup
       pileup = Bio::DB::Pileup.new(line)
       if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => @min_depth, :min_non_ref_count => min_non_ref_count) and
           pileup.consensus != pileup.ref_base
-        read_bases = Pileup.get_read_bases(pileup)
-        data1 = Pileup.read_bases_to_hash(read_bases)
-        frag = pileup.ref_name
-        pos = pileup.pos
-        mut_bases = get_var_base_frac(data1)
-        if vars_hash_bg[frag].key?(pos)
-          bg_bases = get_var_base_frac(vars_hash_bg[frag][pos])
-          vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos, bg_bases)
-        else
-          vars_hash = push_base_hash(mut_bases, vars_hash, frag, pos)
-        end
+        vars_hash = compare_bulk_pileups(pileup, bg_bulk_pileup_hash, vars_hash)
       end
     end
     vars_hash
+  end
+
+  def self.compare_bulk_pileups(mut_pileup, bg_pileup_hash, out_hash)
+    read_bases = Pileup.get_read_bases(mut_pileup)
+    data1 = Pileup.read_bases_to_hash(read_bases)
+    frag = pileup.ref_name
+    pos = pileup.pos
+    mut_bases = get_var_base_frac(data1)
+    if @polyploidy
+      if @parent_hemi_hash[frag].key?(pos)
+
+      else
+        out_hash = wrapper_to_push_base_hash(mut_bases, frag, pos, bg_pileup_hash, out_hash)
+      end
+    else
+      out_hash = wrapper_to_push_base_hash(mut_bases, frag, pos, bg_pileup_hash, out_hash)
+    end
+    out_hash
+  end
+
+  def self.wrapper_to_push_base_hash(mut_bases, frag, pos, bg_pileup_hash, out_hash)
+    if bg_pileup_hash[frag].key?(pos)
+      bg_bases = get_var_base_frac(bg_pileup_hash[frag][pos])
+      out_hash = push_base_hash(mut_bases, out_hash, frag, pos, bg_bases)
+    else
+      out_hash = push_base_hash(mut_bases, out_hash, frag, pos)
+    end
+    out_hash
   end
 
   def self.push_base_hash(base_hash, store_hash, frag, pos, background='')
@@ -328,14 +348,15 @@ class Pileup
     # empty hash results from position below selected coverage or bases freq below noise
     base_hash.delete(:ref)
     return store_hash if base_hash.empty?
+    # we could ignore complex loci or
+    # take the variant type based on predominant base
     if base_hash.length > 1
-      vartype = multi_var_hash(base_hash, background)
-      # warn "#{frag}\t#{pos}\t#{base_hash}\t#{background}\n"
-      if vartype == ''
-        return store_hash
-      else
-        store_hash = Vcf.push_to_hash(store_hash, frag, pos, vartype)
+      mut_type = var_mode(base_hash.values.max)
+      if background != ''
+        bg_type = var_mode(background.values.max)
+        return store_hash if mut_type == bg_type
       end
+      store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
     else
       base = base_hash.keys[0]
       mut_type = var_mode(base_hash[base])
