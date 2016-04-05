@@ -52,15 +52,6 @@ check that it is one sample vcf\n"
     allele_freq
   end
 
-  def self.push_to_hash(hash, chrom, pos, sym)
-    if hash[sym].has_key?(chrom)
-      hash[sym][chrom] << pos
-    else
-      hash[sym][chrom] = []
-      hash[sym][chrom] << pos
-    end
-    hash
-  end
 
   ##Input: vcf file
   ##Ouput: lists of hm and ht SNPS and hash of all fragments with variants
@@ -77,9 +68,9 @@ check that it is one sample vcf\n"
       if v.variant?
         allele_freq = get_allele_freq(v)
         if allele_freq.between?(ht_low, ht_high)
-          var_pos = push_to_hash(var_pos, v.chrom, v.pos, :het)
+          var_pos[:het][v.chrom][v.pos] = allele_freq
         elsif allele_freq > ht_high
-          var_pos = push_to_hash(var_pos, v.chrom, v.pos, :hom)
+          var_pos[:hom][v.chrom][v.pos] = allele_freq
         end
       end
     end

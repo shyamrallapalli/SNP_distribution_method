@@ -356,7 +356,7 @@ class Pileup
         bg_type = var_mode(background.values.max)
         return store_hash if mut_type == bg_type
       end
-      store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+      store_hash[mut_type][frag][pos] = base_hash.values.max
     else
       base = base_hash.keys[0]
       mut_type = var_mode(base_hash[base])
@@ -364,9 +364,9 @@ class Pileup
         bg_type = var_mode(background[base])
         # if both have the same base type then return original hash
         return store_hash if mut_type == bg_type
-        store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+        store_hash[mut_type][frag][pos] = base_hash[base]
       else
-        store_hash = Vcf.push_to_hash(store_hash, frag, pos, mut_type)
+        store_hash[mut_type][frag][pos] = base_hash[base]
       end
     end
     store_hash
