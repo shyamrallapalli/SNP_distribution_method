@@ -1,37 +1,38 @@
 # encoding: utf-8
 
-class BFR
+class Bfr
 
-  attr_accessor :polyploidy, :ht_low, :ht_high, :min_depth
-  attr_accessor :noise, :bfr_adj, :parent_hemi_hash
+  attr_accessor :bfr_adj
 
   DEFAULT = {
-      ignore_reference_n: true,
-      min_depth: 6,
-      min_non_ref_count: 3,
-      noise: 0.1,
-      polyploidy: false,
-      ht_low: 0.1,
-      ht_high: 0.9,
       bfr_adj: 0.01,
-      parent_hemi_hash: '',
+      bg_hash: '',
   }
 
   # get bulk frequency ratio (bfr) for marked hemi snps only
   # ignore postions with complex variants
-  def self.get_bfr(mut_hash, bg_hash='')
+  def self.get_bfr(mut_hash, opts = {})
+    opts = DEFAULT.merge(opts)
+    @bfr_adj = opts[:bfr_adj]
+    bg_hash = opts[:bg_hash]
     if bg_hash != ''
       # checking if only two vars in base hash and that includes ref
       # checking if only one var in hemi snp
       # suggests enrichment for one of two alleles
-      if mut_hash.length == 2 and mut_hash.key?(:ref) or mut_hash.length == 1
+      if mut_hash.length == 2 and mut_hash.key?(:ref)
         bfr = calculate_bfr(mut_hash, bg_hash)
-      elsif bg_hash.length == 2  and bg_hash.key?(:ref) or bg_hash.length == 1
+      elsif bg_hash.length == 2  and bg_hash.key?(:ref)
+        bfr = calculate_bfr(bg_hash, mut_hash)
+      elsif mut_hash.length == 1
+        bfr = calculate_bfr(mut_hash, bg_hash)
+      elsif bg_hash.length == 1
         bfr = calculate_bfr(bg_hash, mut_hash)
       else # complex
         bfr = ''
       end
-    elsif mut_hash.length == 2 and mut_hash.key?(:ref) or mut_hash.length == 1
+    elsif mut_hash.length == 2 and mut_hash.key?(:ref)
+      bfr = calc_fraction(mut_hash)[0]/ @bfr_adj
+    elsif mut_hash.length == 1
       bfr = calc_fraction(mut_hash)[0]/ @bfr_adj
     else
       bfr = ''
