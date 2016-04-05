@@ -322,7 +322,12 @@ class Pileup
     mut_bases = get_var_base_frac(data1)
     if @polyploidy
       if @parent_hemi_hash[frag].key?(pos)
-
+        bg_bases = ''
+        if bg_pileup_hash[frag].key?(pos)
+          bg_bases = get_var_base_frac(bg_pileup_hash[frag][pos])
+        end
+        bfr = Bfr.get_bfr(mut_bases, :bg_hash => bg_bases)
+        out_hash[:hemi][frag][pos] = bfr
       else
         out_hash = wrapper_to_push_base_hash(mut_bases, frag, pos, bg_pileup_hash, out_hash)
       end
