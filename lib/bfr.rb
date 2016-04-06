@@ -10,7 +10,7 @@ class Bfr
   }
 
   # get bulk frequency ratio (bfr) for marked hemi snps only
-  # ignore postions with complex variants
+  # ignore positions with complex variants
   def self.get_bfr(mut_hash, opts = {})
     opts = DEFAULT.merge(opts)
     @bfr_adj = opts[:bfr_adj]

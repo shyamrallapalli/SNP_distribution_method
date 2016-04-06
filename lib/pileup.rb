@@ -23,17 +23,13 @@ class Pileup
   }
 
   # check if the pileup has the parameters we are looking for
-  # if not return empty string
-  def self.check_pileup(pileup)
-      if pileup.is_snp?(:ignore_reference_n => ignore_reference_n,
-                        :min_depth => min_depth,
-                        :min_non_ref_count => min_non_ref_count) and
-          pileup.consensus != pileup.ref_base
-        pileup
-      else
-        ''
-      end
-    end
+  def self.is_var?(pileup)
+    return false if pileup.ref_base == '*'
+    return false if ignore_reference_n and pileup.ref_base =~ /^[nN]$/
+    non_ref_count = get_nonref_count(pileup)
+    return true if pileup.coverage >= min_depth and non_ref_count >= min_non_ref_count
+    false
+  end
 
   # get read bases from pileup object
   # removes mapping quality information
@@ -70,7 +66,6 @@ class Pileup
     indel_bases = 'acgtryswkmbdhvnACGTRYSWKMBDHVN'
     non_indel_bases = String.new
     array = read_bases.split(delimiter)
-    indel_count = array.length - 1
     non_indel_bases << array.shift
     array.each do |element|
       # get number of nucleotides inserted or deleted
@@ -80,6 +75,7 @@ class Pileup
     end
     bases_hash = basehash_counts(non_indel_bases)
     # check at least three reads are supporting indel
+    indel_count = read_bases.count(delimiter)
     if indel_count >= @min_indel_count_support
       bases_hash[:indel] = indel_count
     end
@@ -89,7 +85,8 @@ class Pileup
   # count bases matching reference and non-reference
   # from snp variant and make a hash of bases with counts
   # for indels return the read bases information instead
-  def self.read_bases_to_hash(read_bases)
+  def self.read_bases_to_hash(pileup)
+    read_bases = Pileup.get_read_bases(pileup)
     if read_bases =~ /\+/
       bases_hash = indels_to_hash(read_bases, '+')
     elsif read_bases =~ /\-/
@@ -97,13 +94,18 @@ class Pileup
     else
       bases_hash = basehash_counts(read_bases)
     end
+    # some indels will have ref base in the read and using
+    # sum of hash values is going to give wrond addtional coverage
+    # from indels so including actual coverage from pileup
+    # bases_hash keys are :A, :C, :G, :T, :N, :ref, :indel and :cov
+    bases_hash[:cov] = pileup.coverage
     bases_hash
   end
 
   # count bases from indels
   # array of pileup bases is split at + / -
   # and number after each + / - is counted
-  def self.count_indels(read_bases, delimiter)
+  def self.count_indel_bases(read_bases, delimiter)
     array = read_bases.split(delimiter)
     number = 0
     array.shift
@@ -116,23 +118,29 @@ class Pileup
 
   # count bases matching reference and non-reference
   # and calculate ratio of non_ref allele to total bases
-  def self.get_nonref_ratio(read_bases)
-    ref_count = read_bases.count('.,')
+  def self.get_nonref_count(pileup)
+    read_bases = get_read_bases(pileup)
     if read_bases =~ /\+/
       non_ref_count = read_bases.count('atgcnATGCN')
       pluscounts = read_bases.count('+')
-      indel_bases = count_indels(read_bases, '+')
+      indel_bases = count_indel_bases(read_bases, '+')
       non_ref_count += pluscounts - indel_bases
     elsif read_bases =~ /\-/
       non_ref_count = read_bases.count('acgtryswkmbdhvnACGTRYSWKMBDHVN')
       minuscounts = read_bases.count('-')
-      indel_bases = count_indels(read_bases, '-')
+      indel_bases = count_indel_bases(read_bases, '-')
       non_ref_count += minuscounts - indel_bases
     else
       non_ref_count = read_bases.count('atgcATGC')
     end
-    ratio = non_ref_count.to_f / (ref_count.to_f + non_ref_count.to_f)
-    ratio
+    non_ref_count
+  end
+
+  # count bases matching reference and non-reference
+  # and calculate ratio of non_ref allele to total bases
+  def self.get_nonref_ratio(pileup)
+    non_ref_count = get_nonref_count(pileup)
+    non_ref_count.to_f / pileup.coverage.to_f
   end
 
   def self.get_bg_ratio(bg_bam,selfrag,mutpos, opts = {})
@@ -146,10 +154,9 @@ class Pileup
     bg_ratio = ''
     bg_pileups = get_pileup(bg_bam,selfrag,mutpos, bq, mq)
     return bg_ratio if bg_pileups.empty?
-    pileup = check_pileup(bg_pileups[0])
-    return bg_ratio if pileup == ''
-    read_bases = get_read_bases(pileup)
-    bg_ratio = get_nonref_ratio(read_bases)
+    if is_var?(bg_pileups[0])
+      bg_ratio = get_nonref_ratio(bg_pileups[0])
+    end
     bg_ratio
   end
 
@@ -180,9 +187,8 @@ class Pileup
           next
         end
         pileup = pileups[0]
-        if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth, :min_non_ref_count => min_non_ref_count)
-          read_bases = get_read_bases(pileup)
-          ratio = get_nonref_ratio(read_bases)
+        if is_var?(pileup)
+          ratio = get_nonref_ratio(pileup)
           if bgbam != ''
             bg_ratio = get_bg_ratio(bg_bam,selfrag,mutpos)
             if bg_ratio == ''
@@ -239,12 +245,12 @@ class Pileup
   # base proportion below or equal to a noise factor are discarded
   def self.get_var_base_frac(hash)
     snp_hash = {}
-    coverage = hash.values.inject { | sum, n | sum + n.to_f }
+    coverage = hash[:cov]
     return snp_hash if coverage < @min_depth
     # calculate proportion of each base in coverage
     hash.each_key do | base |
-      # next if base == :ref
-      freq = hash[base].to_f/coverage
+      next if base == :cov
+      freq = hash[base].to_f/coverage.to_f
       next if freq <= @noise
       snp_hash[base] = freq
     end
@@ -279,11 +285,8 @@ class Pileup
     # read mpileup file and process each variant
     File.open(pileupfile, 'r').each do |line|
       pileup = Bio::DB::Pileup.new(line)
-      if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => min_depth,
-                        :min_non_ref_count => min_non_ref_count) and
-          pileup.consensus != pileup.ref_base
-        read_bases = Pileup.get_read_bases(pileup)
-        basehash = Pileup.read_bases_to_hash(read_bases)
+      if is_var?(pileup)
+        basehash = Pileup.read_bases_to_hash(pileup)
         vars_hash[pileup.ref_name][pileup.pos] = basehash
         # puts "#{pileup.ref_name}\t#{pileup.pos}\t#{pileup.consensus}\t#{basehash}\n"
       end
@@ -306,8 +309,7 @@ class Pileup
     # read mpileup file and process each variant
     File.open(mut_pileup, 'r').each do |line|
       pileup = Bio::DB::Pileup.new(line)
-      if pileup.is_snp?(:ignore_reference_n => ignore_reference_n, :min_depth => @min_depth, :min_non_ref_count => min_non_ref_count) and
-          pileup.consensus != pileup.ref_base
+      if is_var?(pileup)
         vars_hash = compare_bulk_pileups(pileup, bg_bulk_pileup_hash, vars_hash)
       end
     end
@@ -315,8 +317,7 @@ class Pileup
   end
 
   def self.compare_bulk_pileups(mut_pileup, bg_pileup_hash, out_hash)
-    read_bases = Pileup.get_read_bases(mut_pileup)
-    data1 = Pileup.read_bases_to_hash(read_bases)
+    data1 = Pileup.read_bases_to_hash(mut_pileup)
     frag = pileup.ref_name
     pos = pileup.pos
     mut_bases = get_var_base_frac(data1)
