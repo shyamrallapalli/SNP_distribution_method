@@ -6,6 +6,7 @@ class Fragments
       filter_out_low_hmes: false,
       cross: 'back',
       cumulate: true,
+      polyploidy: false,
       ratio_adjust: 0.5,
   }
 
@@ -20,6 +21,7 @@ class Fragments
     opts = DEFAULT.merge(opts)
     cumulate = opts[:cumulate]
     ratio_adjust = opts[:ratio_adjust]
+    polyploidy = opts[:polyploidy]
 
     details = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     cumulate_len = 0
@@ -44,12 +46,29 @@ class Fragments
       else
         details[frag][:ratio] = details[frag][:hm]/details[frag][:ht]
       end
+      details[frag][:bfr] = ''
+      if polyploidy and frag_info[:hemi].key?(frag)
+        bfr_pos = frag_info[:hemi][frag].keys
+        next if bfr_pos.empty?
+        details[frag][:bfr] = bfr_pos.length
+        details[frag][:bfr_pos] = bfr_pos.map { |position| position + cumulate_len }
+        details[frag][:bfr_rat] = geom_mean (frag_info[:hemi][frag].values)
+      end
       details[frag][:len] = frag_len[frag].to_i
       if cumulate
         cumulate_len += frag_len[frag].to_i
       end
     }
     details
+  end
+
+  # geometric mean of an array of numbers
+  def self.geom_meam(array)
+    return array[0] if array.length == 1
+    sum = 0.0
+    array.each{ |v| sum += Math.log(v) }
+    sum /= array.size
+    Math.exp sum
   end
 
   #shuffle the contigs with the minimum homozygous scores on the two halves of the expected normal distribution.
