@@ -5,25 +5,28 @@ require 'bio-gngm'
 
 class Pileup
 
-  attr_accessor :min_indel_count_support, :ht_low, :ht_high, :noise
-  attr_accessor :ignore_reference_n, :min_non_ref_count, :min_depth
+  attr_accessor :defaults
 
-  DEFAULT = {
-      bgbam: '',
-      bq: 15,
-      mq: 20,
-      ignore_reference_n: true,
-      min_depth: 6,
+  @defaults = {
+      bq: 15,                      # base quality
+      mq: 20,                      # mapping quality
+      noise: 0.1,                  # noise level for read depth
+      ht_low: 0.2,                 # min allele freq for heterozygosity
+      ht_high: 0.9,                # max allele freq for heterozygosity
+      min_depth: 6,                # minimum coverage for variant
       min_non_ref_count: 3,
+      ignore_reference_n: true,
       min_indel_count_support: 3,
-      noise: 0.1,
-      ht_low: 0.2,
-      ht_high: 0.9,
-      parent_hemi_hash: '',
+      bgbam: '',                   # bam path for background bulk
+      parent_hemi_hash: '',        # hash of hemi snps from parents
   }
 
   # check if the pileup has the parameters we are looking for
   def self.is_var?(pileup)
+    ignore_reference_n = @defaults[:ignore_reference_n]
+    min_depth  = @defaults[:min_depth]
+    min_non_ref_count = @defaults[:min_non_ref_count]
+
     return false if pileup.ref_base == '*'
     return false if ignore_reference_n and pileup.ref_base =~ /^[nN]$/
     non_ref_count = get_nonref_count(pileup)
@@ -76,7 +79,7 @@ class Pileup
     bases_hash = basehash_counts(non_indel_bases)
     # check at least three reads are supporting indel
     indel_count = read_bases.count(delimiter)
-    if indel_count >= @min_indel_count_support
+    if indel_count >= @defaults[:min_indel_count_support]
       bases_hash[:indel] = indel_count
     end
     bases_hash
@@ -143,16 +146,9 @@ class Pileup
     non_ref_count.to_f / pileup.coverage.to_f
   end
 
-  def self.get_bg_ratio(bg_bam,selfrag,mutpos, opts = {})
-    opts = DEFAULT.merge(opts)
-    ignore_reference_n = opts[:ignore_reference_n]
-    min_depth  = opts[:min_depth]
-    min_non_ref_count = opts[:min_non_ref_count]
-    bq = opts[:bq]
-    mq = opts[:mq]
-
+  def self.get_bg_ratio(bg_bam, selfrag, mutpos)
     bg_ratio = ''
-    bg_pileups = get_pileup(bg_bam,selfrag,mutpos, bq, mq)
+    bg_pileups = get_pileup(bg_bam, selfrag, mutpos)
     return bg_ratio if bg_pileups.empty?
     if is_var?(bg_pileups[0])
       bg_ratio = get_nonref_ratio(bg_pileups[0])
@@ -161,14 +157,8 @@ class Pileup
   end
 
   def self.pick_frag_vars(mutbam,infasta,keyfrags,input_frags, var_pos, opts = {})
-    opts = DEFAULT.merge(opts)
-    ignore_reference_n = opts[:ignore_reference_n]
-    min_depth  = opts[:min_depth]
-    min_non_ref_count = opts[:min_non_ref_count]
-    bgbam = opts[:bgbam]
-    bq = opts[:bq]
-    mq = opts[:mq]
-    @min_indel_count_support = opts[:min_indel_count_support]
+    @defaults.merge!(opts)
+    bgbam = @defaults[:bgbam]
 
     mut_bam = Bio::DB::Sam.new(:bam=>mutbam, :fasta=>infasta)
     mut_bam.open
@@ -182,7 +172,7 @@ class Pileup
     keyfrags.each do | selfrag |
       positions = input_frags[selfrag][:hm_pos]
       positions.each do | mutpos |
-        pileups = get_pileup(mut_bam,selfrag,mutpos, bq, mq)
+        pileups = get_pileup(mut_bam, selfrag, mutpos)
         if pileups.empty?
           next
         end
@@ -190,7 +180,7 @@ class Pileup
         if is_var?(pileup)
           ratio = get_nonref_ratio(pileup)
           if bgbam != ''
-            bg_ratio = get_bg_ratio(bg_bam,selfrag,mutpos)
+            bg_ratio = get_bg_ratio(bg_bam, selfrag, mutpos)
             if bg_ratio == ''
               sortfrags[ratio][selfrag][mutpos] = pileup
             elsif bg_ratio <= 0.35
@@ -214,7 +204,10 @@ class Pileup
   # there seems to be a location difference between vcf files and mpileup output
   # so moving upstream in position to get these var info
   # and not going further than 10bp upstream (10bp is arbitrary and this needs verification)
-  def self.get_pileup(bamobject,id,pos1, bq, mq)
+  def self.get_pileup(bamobject, id, pos1)
+    bq = @defaults[:bq]
+    mq = @defaults[:mq]
+
     # a variable to store initial position of var
     initial_pos = pos1
     pileuparray = []
@@ -227,7 +220,7 @@ class Pileup
     pos_diff = initial_pos - pos1
     if pileuparray[0].to_s =~ /^\t0/ and pos_diff <= 10 and pos1 > 1
       pos1 = pos1 - 1
-      pileuparray = get_pileup(bamobject,id,pos1, bq, mq)
+      pileuparray = get_pileup(bamobject, id, pos1)
     # if the difference is larger than 10 bp then set up pileup information as null
     elsif pileuparray[0].to_s =~ /^\t0/ and pos_diff > 10
       pileuparray = []
@@ -246,12 +239,12 @@ class Pileup
   def self.get_var_base_frac(hash)
     snp_hash = {}
     coverage = hash[:cov]
-    return snp_hash if coverage < @min_depth
+    return snp_hash if coverage < @defaults[:min_depth]
     # calculate proportion of each base in coverage
     hash.each_key do | base |
       next if base == :cov
       freq = hash[base].to_f/coverage.to_f
-      next if freq <= @noise
+      next if freq <= @defaults[:noise]
       snp_hash[base] = freq
     end
     snp_hash
@@ -260,10 +253,12 @@ class Pileup
   # calculate var zygosity for non-polyploid variants
   # increased range is used for heterozygosity for RNA-seq data
   def self.var_mode(ratio)
+    ht_low = @defaults[:ht_low]
+    ht_high = @defaults[:ht_high]
     mode = ''
-    if ratio.between?(@ht_low, @ht_high)
+    if ratio.between?(ht_low, ht_high)
       mode = :het
-    elsif ratio > @ht_high
+    elsif ratio > ht_high
       mode = :hom
     end
     mode
@@ -273,10 +268,7 @@ class Pileup
   # each var is checked from pileup information
   # added to a hash to return
   def self.vars_in_pileup(pileupfile, opts = {})
-    opts = DEFAULT.merge(opts)
-    ignore_reference_n = opts[:ignore_reference_n]
-    min_depth  = opts[:min_depth]
-    min_non_ref_count = opts[:min_non_ref_count]
+    @defaults.merge!(opts)
 
     # hash of frag ids with respective variant positions and their base hash info
     # only snps have base hash info and indels base hash is read bases
@@ -295,15 +287,7 @@ class Pileup
   end
 
   def self.filter_vars(mut_pileup, bg_bulk_pileup_hash, opts = {})
-    opts = DEFAULT.merge(opts)
-    ignore_reference_n = opts[:ignore_reference_n]
-    min_non_ref_count = opts[:min_non_ref_count]
-    @min_depth  = opts[:min_depth]
-    @noise = opts[:noise]
-    @polyploidy = opts[:polyploidy]
-    @ht_low = opts[:ht_low]
-    @ht_high  = opts[:ht_high]
-    @parent_hemi_hash = opts[:parent_hemi_hash]
+    @defaults.merge!(opts)
 
     vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     # read mpileup file and process each variant
@@ -317,12 +301,13 @@ class Pileup
   end
 
   def self.compare_bulk_pileups(mut_pileup, bg_pileup_hash, out_hash)
+    parent_hemi_hash = @defaults[:parent_hemi_hash]
     data1 = Pileup.read_bases_to_hash(mut_pileup)
     frag = pileup.ref_name
     pos = pileup.pos
     mut_bases = get_var_base_frac(data1)
-    if @polyploidy
-      if @parent_hemi_hash[frag].key?(pos)
+    if @defaults[:polyploidy]
+      if parent_hemi_hash != '' and parent_hemi_hash[frag].key?(pos)
         bg_bases = ''
         if bg_pileup_hash[frag].key?(pos)
           bg_bases = get_var_base_frac(bg_pileup_hash[frag][pos])
@@ -405,9 +390,10 @@ class Pileup
 
   # get total proportion of bases in hash
   def self.polybase_proportion(vars, hash)
+    polyploidy = @defaults[:polyploidy]
     # if polyploidy set then take combination of proportions
     # if not then take maximum value
-    if @polyploidy
+    if polyploidy
       prop = 0.0
       hash.each_key { | key |
         if vars.include?(key)
