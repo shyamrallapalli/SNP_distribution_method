@@ -63,7 +63,7 @@ class Fragments
   end
 
   # geometric mean of an array of numbers
-  def self.geom_meam(array)
+  def self.geom_mean(array)
     return array[0] if array.length == 1
     sum = 0.0
     array.each{ |v| sum += Math.log(v) }
@@ -153,11 +153,14 @@ class Fragments
     opts = DEFAULT.merge(opts)
     filter_out_low_hmes = opts[:filter_out_low_hmes]
     cross = opts[:cross]
+    polyploidy = opts[:polyploidy]
     # set minimum cut off ratio to pick fragments with variants
     # calculate min hme score for back or out crossed data
     # if no filtering applied set cutoff to 1
     if filter_out_low_hmes
-      if cross == 'back'
+      if polyploidy
+        cutoff = 1.1
+      elsif cross == 'back'
         cutoff = (1.0/adjust) + 1.0
       else
         cutoff = (2.0/adjust) + 1.0
