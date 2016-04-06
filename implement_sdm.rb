@@ -110,7 +110,7 @@ sdm_frags = ''
 new_mut_frags = ''
 repeat = 1
 while repeat < 3 do
-  input_frags = Vcf.varpos_aggregate(var_pos, inseq_len, ids, adjust, :cumulate => false)
+  input_frags = Fragments.varpos_aggregate(var_pos, inseq_len, ids, :ratio_adjust => adjust, :cumulate => false)
   File.open("#{log_folder}/#{repeat}_t_17_input_frags.yml", 'w') do |file|
     file.write input_frags.to_yaml
   end
@@ -187,7 +187,7 @@ puts '______________________'
 # ###[6] Plots
 
 # do the pos aggregation after trimming filtered positions
-outcome = Vcf.varpos_aggregate(var_pos, inseq_len, sdm_frags, adjust)
+outcome = Fragments.varpos_aggregate(var_pos, inseq_len, sdm_frags, :ratio_adjust => adjust)
 
 File.open("#{output_folder}/outcome_table.txt", 'w+') do |f|
   f.puts "Frag_id\tHMEscore\tnum hm\tnum ht\tlength\tcumulative length\thm positions"
@@ -233,7 +233,7 @@ if pars['test']
   frags_order = pars['frags_order']
   ids_ok = FileRW.to_array(frags_order)
 
-  original = Vcf.varpos_aggregate(var_pos_orig, inseq_len, ids_ok, adjust)
+  original = Fragments.varpos_aggregate(var_pos_orig, inseq_len, ids_ok, :ratio_adjust => adjust)
 
 
   # #ratio of homozygous to heterozygous snps per each fragment is calculated (ordered)

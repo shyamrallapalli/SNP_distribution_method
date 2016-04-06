@@ -8,7 +8,6 @@ class Vcf
   DEFAULT = {
       ht_low: 0.25,
       ht_high: 0.75,
-      cumulate: true,
   }
 
   def self.get_allele_freq(vcf_obj)
@@ -95,48 +94,6 @@ check that it is one sample vcf\n"
       end
     end
     var_pos_mut
-  end
-
-  # function to get cumulative variant positions from the order of fragments
-  # input1: hash of frag ids with positions for homozygous and heterozygous variants
-  # input2: hash of fragment lengths
-  # input3: array of fragment order
-  # input4: ratio adjustment factor
-  # output: a hash of frag ids with all details and variant positions
-  # are accumulated using length and order of fragments
-  def self.varpos_aggregate(frag_info, frag_len, frag_order, ratio_adjust,  opts = {})
-    opts = DEFAULT.merge(opts)
-    cumulate = opts[:cumulate]
-
-    details = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-    cumulate_len = 0
-    frag_order.each { | frag |
-      details[frag][:hm] = ratio_adjust
-      details[frag][:ht] = ratio_adjust
-      details[frag][:hm_pos] = []
-      details[frag][:ht_pos] = []
-      details[frag][:cum_len] = cumulate_len
-      if frag_info[:hom].key?(frag)
-        hm_pos = frag_info[:hom][frag].keys
-        details[frag][:hm] += hm_pos.length
-        details[frag][:hm_pos] = hm_pos.map { |position| position + cumulate_len }
-      end
-      if frag_info[:het].key?(frag)
-        ht_pos = frag_info[:het][frag].keys
-        details[frag][:ht] += ht_pos.length
-        details[frag][:ht_pos] = ht_pos.map { |position| position + cumulate_len }
-      end
-      if details[frag][:hm] == ratio_adjust and details[frag][:ht] == ratio_adjust
-        details[frag][:ratio] = 0.0
-      else
-        details[frag][:ratio] = details[frag][:hm]/details[frag][:ht]
-      end
-      details[frag][:len] = frag_len[frag].to_i
-      if cumulate
-        cumulate_len += frag_len[frag].to_i
-      end
-    }
-    details
   end
 
 end
