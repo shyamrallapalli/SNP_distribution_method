@@ -48,6 +48,9 @@ adjust = pars['ratio_adj'].to_f
 threshold = pars['filter'].to_i
 cross = pars['cross']
 
+mut_parent = pars['mut_parent']
+bg_parent = pars['bg_parent']
+
 # Make Output directory
 output_folder = "#{pars['outdir']}_#{threshold}_#{adjust}"
 log_folder = "#{pars['logdir']}_#{threshold}_#{adjust}"
@@ -79,10 +82,19 @@ if bg_vcf == '' and bg_pileup == ''
   end
 else
   if mut_pileup != '' and bg_pileup != ''
-    vars_bg = Pileup.vars_in_pileup(bg_pileup,
-                                       :min_depth => 6, :min_non_ref_count => 3)
-    var_pos = Pileup.filter_vars(mut_pileup, vars_bg, :ht_low => 0.1, :ht_high => 0.9, :polyploidy => false,
-                                    :noise => 0.1, :min_depth => 6, :min_non_ref_count => 3)
+    parents_snps = ''
+    if mut_parent != '' and bg_parent != ''
+      vars_bg_parent = Pileup.vars_in_pileup(bg_parent)
+      vars_mut_parent = Pileup.vars_in_pileup(mut_parent)
+      parents_snps = Polyploid.mark_hemisnps_in_parent(vars_mut_parent, vars_bg_parent)
+      File.open("#{log_folder}/1_4_ parents_snps.yml", 'w') do |file|
+        file.write  parents_snps.to_yaml
+      end
+    end
+    vars_bg = Pileup.vars_in_pileup(bg_pileup)
+    var_pos = Pileup.filter_vars(mut_pileup, vars_bg, :ht_low => 0.2, :ht_high => 0.9,
+                                 :polyploidy => true, :noise => 0.1, :min_depth => 6,
+                                 :min_non_ref_count => 3, :parent_hemi_hash => parents_snps)
   elsif mut_vcf != '' and bg_vcf != ''
     var_pos = Vcf.filtering(mut_vcf, bg_vcf)
   else

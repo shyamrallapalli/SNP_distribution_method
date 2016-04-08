@@ -16,6 +16,7 @@ class Pileup
       min_depth: 6,                # minimum coverage for variant
       min_non_ref_count: 3,
       ignore_reference_n: true,
+      polyploidy: false,
       min_indel_count_support: 3,
       bgbam: '',                   # bam path for background bulk
       parent_hemi_hash: '',        # hash of hemi snps from parents
@@ -303,8 +304,8 @@ class Pileup
   def self.compare_bulk_pileups(mut_pileup, bg_pileup_hash, out_hash)
     parent_hemi_hash = @defaults[:parent_hemi_hash]
     data1 = Pileup.read_bases_to_hash(mut_pileup)
-    frag = pileup.ref_name
-    pos = pileup.pos
+    frag = mut_pileup.ref_name
+    pos = mut_pileup.pos
     mut_bases = get_var_base_frac(data1)
     if @defaults[:polyploidy]
       if parent_hemi_hash != '' and parent_hemi_hash[frag].key?(pos)
