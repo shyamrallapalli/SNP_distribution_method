@@ -365,49 +365,4 @@ class Pileup
     store_hash
   end
 
-  # method to compare base hash between and background and mutant
-  # returns the var_type if single base left after background subtraction
-  # otherwise returns empty for multiple vars
-  def self.multi_var_hash(base_hash, background='')
-    var_type = ''
-    mut_vars = base_hash.keys.sort
-    # ignore complex variant locations
-    # return var_type if mut_vars.length > 2
-    if background != ''
-      bg_vars = background.keys.sort
-      return var_type if mut_vars == bg_vars
-      mut_vars.delete_if { |base| bg_vars.include?(base) }
-      if mut_vars.length == 1
-        var_type = var_mode(base_hash[mut_vars[0]])
-      else
-        ratio = polybase_proportion(mut_vars, base_hash)
-        var_type = var_mode(ratio)
-      end
-    else
-      ratio = polybase_proportion(mut_vars, base_hash)
-      var_type = var_mode(ratio)
-    end
-    var_type
-  end
-
-  # get total proportion of bases in hash
-  def self.polybase_proportion(vars, hash)
-    polyploidy = @defaults[:polyploidy]
-    # if polyploidy set then take combination of proportions
-    # if not then take maximum value
-    if polyploidy
-      prop = 0.0
-      hash.each_key { | key |
-        if vars.include?(key)
-          prop += hash[key]
-        end
-      }
-      # warn "polybase\t#{hash}\t#{vars}\t#{prop}\n"
-    else
-      prop = hash.values.max
-      # warn "non_polybase\t#{hash}\t#{vars}\t#{prop}\n"
-    end
-    prop
-  end
-
 end
