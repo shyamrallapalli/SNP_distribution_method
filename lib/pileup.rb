@@ -2,6 +2,7 @@
 require 'bio'
 require 'bio-samtools'
 require 'bio-gngm'
+require_relative 'bfr'
 
 class Pileup
 
@@ -276,7 +277,7 @@ class Pileup
     vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
 
     # read mpileup file and process each variant
-    File.open(pileupfile, 'r').each do |line|
+    File.foreach(pileupfile) do |line|
       pileup = Bio::DB::Pileup.new(line)
       if is_var?(pileup)
         basehash = Pileup.read_bases_to_hash(pileup)
@@ -292,7 +293,7 @@ class Pileup
 
     vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     # read mpileup file and process each variant
-    File.open(mut_pileup, 'r').each do |line|
+    File.foreach(mut_pileup) do |line|
       pileup = Bio::DB::Pileup.new(line)
       if is_var?(pileup)
         vars_hash = compare_bulk_pileups(pileup, bg_bulk_pileup_hash, vars_hash)

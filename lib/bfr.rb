@@ -23,16 +23,16 @@ class Bfr
         bfr = calculate_bfr(mut_hash, bg_hash)
       elsif bg_hash.length == 2  and bg_hash.key?(:ref)
         bfr = calculate_bfr(bg_hash, mut_hash)
-      elsif mut_hash.length == 1
+      elsif mut_hash.length == 1 and mut_hash[:ref] == nil
         bfr = calculate_bfr(mut_hash, bg_hash)
-      elsif bg_hash.length == 1
+      elsif bg_hash.length == 1 and bg_hash[:ref] == nil
         bfr = calculate_bfr(bg_hash, mut_hash)
       else # complex
         bfr = ''
       end
     elsif mut_hash.length == 2 and mut_hash.key?(:ref)
       bfr = calc_fraction(mut_hash)[0]/ @bfr_adj
-    elsif mut_hash.length == 1
+    elsif mut_hash.length == 1 and mut_hash[:ref] == nil
       bfr = calc_fraction(mut_hash)[0]/ @bfr_adj
     else
       bfr = ''

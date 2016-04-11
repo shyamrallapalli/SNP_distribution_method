@@ -61,7 +61,7 @@ check that it is one sample vcf\n"
 
     # hash of :het and :hom with frag ids and respective variant positions
     var_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-    File.open(vcf_file, 'r').each do |line|
+    File.foreach(vcf_file) do |line|
       next if line =~ /^#/
       v = Bio::DB::Vcf.new(line)
       if v.variant?
