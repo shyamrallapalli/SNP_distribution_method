@@ -51,6 +51,7 @@ polyploidy = pars['polyploidy']
 
 mut_parent = pars['mut_parent']
 bg_parent = pars['bg_parent']
+vars_from_yaml = pars['vars_from_yaml']
 
 # Make Output directory
 output_folder = "#{pars['outdir']}_#{threshold}_#{adjust}"
@@ -72,7 +73,9 @@ puts "A factor of #{adjust} will be used to calculate the ratio"
 
 # ###[1] Open VCF file
 var_pos = ''
-if bg_vcf == '' and bg_pileup == ''
+if vars_from_yaml != ''
+    var_pos = YAML.load_file(vars_from_yaml)
+elsif bg_vcf == '' and bg_pileup == ''
   if mut_pileup != ''
     # do something with only mut pileup file
   elsif mut_vcf != ''
@@ -239,7 +242,8 @@ File.open("#{output_folder}/selected_variants.txt", 'w+') do |f|
         sortfrags[ratio_1][frag_1].each_key do | pos_1 |
           line = sortfrags[ratio_1][frag_1][pos_1].to_s
           pileup = Bio::DB::Pileup.new(line)
-          frag_len =input_frags[frag_1][:len]
+          frag_len = input_frags[frag_1][:len]
+          warn "#{frag_1}\t#{frag_len}"
           low = pos_1-51 <= 0 ? 0 : pos_1-51
           high = pos_1+51 >= frag_len ? frag_len : pos_1+51
           region = Bio::DB::Fasta::Region.parse_region("#{frag_1}:#{low}-#{pos_1-1}")
