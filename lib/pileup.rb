@@ -56,7 +56,7 @@ class Pileup
     bases_hash[:C] = read_bases.count('cC')
     bases_hash[:G] = read_bases.count('gG')
     bases_hash[:T] = read_bases.count('tT')
-    bases_hash[:N] = read_bases.count('nN')
+    # bases_hash[:N] = read_bases.count('nN')
     bases_hash
   end
 

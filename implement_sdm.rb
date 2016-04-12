@@ -47,6 +47,7 @@ bg_pileup = pars['bg_pileup']
 adjust = pars['ratio_adj'].to_f
 threshold = pars['filter'].to_i
 cross = pars['cross']
+polyploidy = pars['polyploidy']
 
 mut_parent = pars['mut_parent']
 bg_parent = pars['bg_parent']
@@ -93,7 +94,7 @@ else
     end
     vars_bg = Pileup.vars_in_pileup(bg_pileup)
     var_pos = Pileup.filter_vars(mut_pileup, vars_bg, :ht_low => 0.2, :ht_high => 0.9,
-                                 :polyploidy => true, :noise => 0.1, :min_depth => 6,
+                                 :polyploidy => polyploidy, :noise => 0.1, :min_depth => 6,
                                  :min_non_ref_count => 3, :parent_hemi_hash => parents_snps)
   elsif mut_vcf != '' and bg_vcf != ''
     var_pos = Vcf.filtering(mut_vcf, bg_vcf)
@@ -122,7 +123,7 @@ sdm_frags = ''
 new_mut_frags = ''
 repeat = 1
 while repeat < 3 do
-  input_frags = Fragments.varpos_aggregate(var_pos, inseq_len, ids, :ratio_adjust => adjust, :cumulate => false)
+  input_frags = Fragments.varpos_aggregate(var_pos, inseq_len, ids, :ratio_adjust => adjust, :cumulate => false, :polyploidy => polyploidy)
   File.open("#{log_folder}/#{repeat}_t_17_input_frags.yml", 'w') do |file|
     file.write input_frags.to_yaml
   end
@@ -184,6 +185,21 @@ while repeat < 3 do
   end
   repeat += 1
 end
+
+# bfr ratio hash
+bfr_ratios_hash = RatioFilter.selected_ratios(input_frags, :ratio_adjust => adjust, :only_frag_with_vars => true, :ratio_type => 'bfr_rat')
+File.open("#{log_folder}/bfr_3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
+  file.write bfr_ratios_hash.to_yaml
+end
+
+# arrange using bfr_ratios
+bfr_sdm_frags = Fragments.arrange(bfr_ratios_hash, input_frags)
+FileRW.write_txt("#{log_folder}/bfr_4_3_perm_ratio", bfr_sdm_frags)
+
+# select frags with high bfr
+bfr_sel_frags = Fragments.select_fragments(bfr_ratios_hash, bfr_sdm_frags, adjust, :cross => cross, :filter_out_low_hmes => true)
+FileRW.write_txt("#{log_folder}/bfr_4_5_selected_frags", bfr_sel_frags)
+
 
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM

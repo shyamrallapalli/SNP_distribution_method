@@ -19,7 +19,7 @@ class RatioFilter
       if ratio_type == :ratio and numht + numhm <= 2 * adjust
         inhash.delete(frag)
       # in polyploidy scenario selecting fragments with at least one bfr position
-      elsif ratio_type == :brf_rat and numbfr <= 0
+      elsif ratio_type == :bfr_rat and numbfr <= 0
         inhash.delete(frag)
       end
     end
