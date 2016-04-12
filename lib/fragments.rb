@@ -46,17 +46,24 @@ class Fragments
       else
         details[frag][:ratio] = details[frag][:hm]/details[frag][:ht]
       end
-      details[frag][:bfr] = ''
-      if polyploidy and frag_info[:hemi].key?(frag)
-        bfr_pos = frag_info[:hemi][frag].keys
-        next if bfr_pos.empty?
-        details[frag][:bfr] = bfr_pos.length
-        details[frag][:bfr_pos] = bfr_pos.map { |position| position + cumulate_len }
-        details[frag][:bfr_rat] = geom_mean (frag_info[:hemi][frag].values)
-      end
       details[frag][:len] = frag_len[frag].to_i
       if cumulate
         cumulate_len += frag_len[frag].to_i
+      end
+      details[frag][:bfr] = ''
+      if polyploidy
+        if frag_info[:hemi].key?(frag)
+          bfr_pos = frag_info[:hemi][frag].keys
+          if bfr_pos.empty?
+            details[frag][:bfr] = 0
+          else
+            details[frag][:bfr] = bfr_pos.length
+            details[frag][:bfr_pos] = bfr_pos.map { |position| position + cumulate_len }
+            details[frag][:bfr_rat] = geom_mean (frag_info[:hemi][frag].values)
+          end
+        else
+          details[frag][:bfr] = 0
+        end
       end
     }
     details
@@ -64,9 +71,9 @@ class Fragments
 
   # geometric mean of an array of numbers
   def self.geom_mean(array)
-    return array[0] if array.length == 1
+    return array[0].to_f if array.length == 1
     sum = 0.0
-    array.each{ |v| sum += Math.log(v) }
+    array.each{ |v| sum += Math.log(v.to_f) }
     sum /= array.size
     Math.exp sum
   end
