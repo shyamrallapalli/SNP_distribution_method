@@ -189,21 +189,6 @@ while repeat < 3 do
   repeat += 1
 end
 
-# bfr ratio hash
-bfr_ratios_hash = RatioFilter.selected_ratios(input_frags, :ratio_adjust => adjust, :only_frag_with_vars => true, :ratio_type => 'bfr_rat')
-File.open("#{log_folder}/bfr_3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
-  file.write bfr_ratios_hash.to_yaml
-end
-
-# arrange using bfr_ratios
-bfr_sdm_frags = Fragments.arrange(bfr_ratios_hash, input_frags)
-FileRW.write_txt("#{log_folder}/bfr_4_3_perm_ratio", bfr_sdm_frags)
-
-# select frags with high bfr
-bfr_sel_frags = Fragments.select_fragments(bfr_ratios_hash, bfr_sdm_frags, adjust, :cross => cross, :filter_out_low_hmes => true)
-FileRW.write_txt("#{log_folder}/bfr_4_5_selected_frags", bfr_sel_frags)
-
-
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
 filename = "ordered_frags_thres#{threshold}.fasta"
@@ -243,7 +228,6 @@ File.open("#{output_folder}/selected_variants.txt", 'w+') do |f|
           line = sortfrags[ratio_1][frag_1][pos_1].to_s
           pileup = Bio::DB::Pileup.new(line)
           frag_len = input_frags[frag_1][:len]
-          warn "#{frag_1}\t#{frag_len}"
           low = pos_1-51 <= 0 ? 0 : pos_1-51
           high = pos_1+51 >= frag_len ? frag_len : pos_1+51
           region = Bio::DB::Fasta::Region.parse_region("#{frag_1}:#{low}-#{pos_1-1}")
@@ -256,6 +240,23 @@ File.open("#{output_folder}/selected_variants.txt", 'w+') do |f|
       end
     end
   end
+end
+
+# do analysis for polyploid homeologue genes
+if polyploidy
+  # bfr ratio hash
+  bfr_ratios_hash = RatioFilter.selected_ratios(input_frags, :ratio_adjust => adjust, :only_frag_with_vars => true, :ratio_type => 'bfr_rat')
+  File.open("#{log_folder}/bfr_3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
+    file.write bfr_ratios_hash.to_yaml
+  end
+
+  # arrange using bfr_ratios
+  bfr_sdm_frags = Fragments.arrange(bfr_ratios_hash, input_frags)
+  FileRW.write_txt("#{log_folder}/bfr_4_3_perm_ratio", bfr_sdm_frags)
+
+  # select frags with high bfr
+  bfr_sel_frags = Fragments.select_fragments(bfr_ratios_hash, bfr_sdm_frags, adjust, :cross => cross, :filter_out_low_hmes => true)
+  FileRW.write_txt("#{log_folder}/bfr_4_5_selected_frags", bfr_sel_frags)
 end
 
 ########## Test comparison inputs and analysis and comparison
