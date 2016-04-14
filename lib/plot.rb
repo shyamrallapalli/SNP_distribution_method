@@ -3,6 +3,7 @@
 require 'rinruby'
 
 class Plot
+
   def self.qqplot(experimental, dir, title, ylabel, xlabel, nametag)
     myr = RinRuby.new(:echo=>false)
     myr.assign 'experimental', experimental
@@ -33,14 +34,18 @@ class Plot
     options(scipen = 10)
     x <- experimental
     y <- rnorm(length(x), mean(x), sd(x))
-    # df <- data.frame(x, y)
     V = qqplot(x, y, main=title, ylab=ylabel, xlab =xlabel, pch=20, col="#0072B2")
-    l <- qqline2(x, y, col ="#D55E00")
-    # fg <- data.frame(V$x, V$y)
-    k <- lm(V$y ~ V$x)
-    len <- leg_r2(k)
-    dev.off()'
-    myr.quit
+    qqline2(x, y, col ="#D55E00")
+    leg_r2(lm(V$y ~ V$x))
+    dev.off()
+    # added some wait time before completing the operations
+    Sys.sleep(10)'
+    # had `write': Broken pipe (Errno::EPIPE) error when quit was called on rinruby R session
+    begin
+      myr.quit
+    rescue Errno::EPIPE
+      STDERR.puts 'Connection broke for rinruby quit at Plot::qqplot method'
+    end
   end
 
   def self.densities(hm, ht, ratio, dir, n)
@@ -71,8 +76,14 @@ class Plot
     axis(3, at=c(length[1], length[1]+diff(length)/2, length[2]), labels=c(1, diff(length)/2, diff(length)) )
     legend("topright", col=c("#0072B2", "#999999", "#D55E00"), lwd=1,
       legend=c("Homozygous SNP density","Heterozygous SNP density", "Hom/Het ratio"), bty="n")
-    dev.off()'
-    myr.quit
+    dev.off()
+    # added some wait time before completing the operations
+    Sys.sleep(10)'
+    begin
+      myr.quit
+    rescue Errno::EPIPE
+      STDERR.puts 'Connection broke for rinruby quit at Plot::densities method'
+    end
   end
 
   def self.get_ylim(array, genome_length)
@@ -107,8 +118,14 @@ class Plot
     plot(d2$x, d2$y, col = "#0072B2", lwd =2, type = "l", main="original ratios", xlab="", ylab="")
     plot(d2$x, d2$y, type = "n", main = "original var positions", xlim =c(0,length), xlab="genome positions", ylab="", yaxt="n")
     abline(v=original_pos, col = "#0072B2", lty=2)
-    dev.off()'
-    myr.quit
+    dev.off()
+    # added some wait time before completing the operations
+    Sys.sleep(10)'
+    begin
+      myr.quit
+    rescue Errno::EPIPE
+      STDERR.puts 'Connection broke for rinruby quit at Plot::comparison method'
+    end
   end
 
 end
