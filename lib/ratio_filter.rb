@@ -9,22 +9,35 @@ class RatioFilter
       ratio_type: 'ratio',
   }
 
-  def self.prune_hash(inhash, adjust, ratio_type)
-    first = inhash.length
+  def self.filter_hash(inhash, adjust, ratio_type, only_frag_with_vars)
+    discard = 0
     inhash.each_key do | frag |
       numhm = inhash[frag][:hm]
       numht = inhash[frag][:ht]
       numbfr = inhash[frag][:bfr]
-      # selecting fragments which have a variant
-      if ratio_type == :ratio and numht + numhm <= 2 * adjust
-        inhash.delete(frag)
-      # in polyploidy scenario selecting fragments with at least one bfr position
-      elsif ratio_type == :bfr_rat and numbfr <= 0
-        inhash.delete(frag)
+      if only_frag_with_vars
+        # selecting fragments which have a variant
+        if ratio_type == :ratio and numht + numhm <= 2 * adjust
+          inhash[frag][:discard] = true
+          discard += 1
+          # inhash.delete(frag)
+        # in polyploidy scenario selecting fragments with at least one bfr position
+        elsif ratio_type == :bfr_rat and numbfr <= 0
+          inhash[frag][:discard] = true
+          discard += 1
+          # inhash.delete(frag)
+        else
+          inhash[frag][:discard] = false
+        end
+      else
+        inhash[frag][:discard] = false
       end
     end
-    last = inhash.length
-    warn "Discarded #{first-last} out of #{first} fragments, which lack any variant\n"
+    if only_frag_with_vars
+      warn "Discarded #{discard} out of #{inhash.length} fragments, which lack any variant\n"
+    else
+      warn "No filtering was applied to fragments that lack any variant or bfr\n"
+    end
     inhash
   end
 
@@ -37,16 +50,16 @@ class RatioFilter
     # select only fragments with variants
     # this is to discard fragments which may not contain
     # any information about causative mutations
-    if only_frag_with_vars
-      inhash = prune_hash(inhash, adjust, ratio_type)
-    end
+    inhash = filter_hash(inhash, adjust, ratio_type, only_frag_with_vars)
     inhash.keys.each do | frag |
-      ratio = inhash[frag][ratio_type]
-      if ratios_hash.key?(ratio)
-        ratios_hash[ratio] << frag
-      else
-        ratios_hash[ratio] = []
-        ratios_hash[ratio] << frag
+      unless inhash[frag][:discard]
+        ratio = inhash[frag][ratio_type]
+        if ratios_hash.key?(ratio)
+          ratios_hash[ratio] << frag
+        else
+          ratios_hash[ratio] = []
+          ratios_hash[ratio] << frag
+        end
       end
     end
     ratios_hash
