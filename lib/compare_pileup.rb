@@ -102,6 +102,27 @@ class BamCompare
     pileuparray
   end
 
+  def self.vars_in_bam(opts = {})
+    @defaults.merge!(opts)
+    bam = @defaults[:bam]
+    fasta = @defaults[:fasta]
+    bq = @defaults[:bq]
+    mq = @defaults[:mq]
+
+    inbam = Bio::DB::Sam.new(:bam=>bam, :fasta=>fasta)
+    vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    inbam.each_region do | region |
+      inbam.mpileup_cached(:r => region, :q => mq, :Q => bq) do | pileup |
+        if is_var?(pileup)
+          basehash = Pileup.read_bases_to_hash(pileup)
+          vars_hash[pileup.ref_name][pileup.pos] = basehash
+        end
+      end
+      inbam.mpileup_clear_cache (region)
+    end
+    vars_hash
+  end
+
 end # class BamCompare
 
 class PileupCompare
