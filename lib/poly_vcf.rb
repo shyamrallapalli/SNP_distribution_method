@@ -3,6 +3,7 @@ require 'bio'
 require 'bio-samtools'
 require 'bio-gngm'
 require_relative 'pileup'
+require_relative 'bfr'
 
 class Polyploid
 
@@ -30,15 +31,18 @@ class Polyploid
         if bg_parent_hash[frag].key?(pos)
           bg_bases = Pileup.get_var_base_frac(bg_parent_hash[frag][pos])
           if mut_bases.length == 2 and mut_bases.key?(:ref)
-            out_hash[frag][pos] = 'hemi'
             # calculate bfr
+            bfr = Bfr.get_bfr(mut_bases, :bg_hash => bg_bases)
+            out_hash[frag][pos] = bfr
           elsif bg_bases.length == 2 and bg_bases.key?(:ref)
-            out_hash[frag][pos] = 'hemi'
+            bfr = Bfr.get_bfr(mut_bases, :bg_hash => bg_bases)
+            out_hash[frag][pos] = bfr
           end
           bg_parent_hash[frag].delete(pos)
         else
           if mut_bases.length == 2 and mut_bases.key?(:ref)
-            out_hash[frag][pos] = 'hemi'
+            bfr = Bfr.get_bfr(mut_bases)
+            out_hash[frag][pos] = bfr
           end
         end
       end
@@ -51,7 +55,8 @@ class Polyploid
         bg_bases = Pileup.get_var_base_frac(bg_parent_hash[frag][pos])
         if bg_bases.length == 2 and bg_bases.key?(:ref)
           unless out_hash[frag].key?(pos)
-            out_hash[frag][pos] = 'hemi'
+            bfr = Bfr.get_bfr(bg_bases)
+            out_hash[frag][pos] = bfr
           end
         end
       end
