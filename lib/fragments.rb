@@ -161,13 +161,15 @@ class Fragments
     filter_out_low_hmes = opts[:filter_out_low_hmes]
     cross = opts[:cross]
     polyploidy = opts[:polyploidy]
+    bfr_cutoff = opts[:bfr_cutoff]
     # set minimum cut off ratio to pick fragments with variants
     # calculate min hme score for back or out crossed data
     # if no filtering applied set cutoff to 1
-    if filter_out_low_hmes
-      if polyploidy
-        cutoff = 1.1
-      elsif cross == 'back'
+    if filter_out_low_hmes and polyploidy
+        # cutoff = 1.1
+        cutoff = bfr_ratio_cutoff(ratios_hash, bfr_cutoff)
+    elsif filter_out_low_hmes
+      if cross == 'back'
         cutoff = (1.0/adjust) + 1.0
       else
         cutoff = (2.0/adjust) + 1.0
@@ -192,6 +194,24 @@ class Fragments
       end
     end
     mutfrags
+  end
+
+  def self.bfr_ratio_cutoff(ratios_hash, bfr_cutoff=0.1)
+    ratios = []
+    ratios_hash.each do | key, value |
+      value.length.times do
+        ratios << key
+      end
+    end
+    ratios.sort!.reverse!
+    index = (ratios.count * bfr_cutoff)/100
+    # set a minmum index to get at least one contig
+    if index < 1
+      index = 1
+    end
+    value = ratios[index - 1]
+    # warn "cutoff\t#{value}"
+    value
   end
 
 end

@@ -91,7 +91,7 @@ else
       vars_bg_parent = Pileup.vars_in_pileup(bg_parent)
       vars_mut_parent = Pileup.vars_in_pileup(mut_parent)
       parents_snps = Polyploid.mark_hemisnps_in_parent(vars_mut_parent, vars_bg_parent)
-      File.open("#{log_folder}/1_4_ parents_snps.yml", 'w') do |file|
+      File.open("#{log_folder}/1_4_parents_snps.yml", 'w') do |file|
         file.write  parents_snps.to_yaml
       end
     end
@@ -181,7 +181,7 @@ while repeat < 3 do
     selected_pos = mut_frags_pos[fragment].keys
     var_pos[:hom][fragment].each_key do | varpos |
       unless selected_pos.include?(varpos)
-        warn "#{fragment}\t#{varpos}\n"
+        warn "Deleting positions\t#{fragment}\t#{varpos}\n"
         var_pos[:hom][fragment].delete(varpos)
       end
     end
@@ -249,14 +249,28 @@ if polyploidy
   File.open("#{log_folder}/bfr_3_4_dic_ratios_inv_shuf.yml", 'w') do |file|
     file.write bfr_ratios_hash.to_yaml
   end
+  File.open("#{log_folder}/bfr_ratios_table.txt", 'w') do |f|
+    bfr_ratios_hash.each_key do | frag |
+      f.puts "#{frag}\t#{bfr_ratios_hash[frag].length}"
+    end
+  end
 
   # arrange using bfr_ratios
   bfr_sdm_frags = Fragments.arrange(bfr_ratios_hash, input_frags)
   FileRW.write_txt("#{log_folder}/bfr_4_3_perm_ratio", bfr_sdm_frags)
 
   # select frags with high bfr
-  bfr_sel_frags = Fragments.select_fragments(bfr_ratios_hash, bfr_sdm_frags, adjust, :cross => cross, :filter_out_low_hmes => true)
+  bfr_sel_frags = Fragments.select_fragments(bfr_ratios_hash, bfr_sdm_frags, adjust,
+    :cross => cross, :filter_out_low_hmes => true, :polyploidy => polyploidy, :bfr_cutoff => 0.1)
   FileRW.write_txt("#{log_folder}/bfr_4_5_selected_frags", bfr_sel_frags)
+
+  File.open("#{log_folder}/bfr_outcome_table.txt", 'w') do |f|
+    f.puts "Frag_id\tbfr\tHMEscore\tnum hm\tnum ht\tlength\tcumulative length\thm positions"
+    input_frags.each_key do |key|
+      f.puts "#{key}\t#{input_frags[key][:bfr_rat]}\t#{input_frags[key][:ratio]}\t#{input_frags[key][:hm]}\t#{input_frags[key][:ht]}\t#{input_frags[key][:len]}\t#{input_frags[key][:cum_len]}\t#{input_frags[key][:hm_pos]}"
+    end
+  end
+
 end
 
 ########## Test comparison inputs and analysis and comparison
