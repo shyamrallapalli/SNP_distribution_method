@@ -19,11 +19,11 @@ class BamCompare
   def self.get_bg_ratio(bg_bam, selfrag, mutpos)
     bg_ratio = ''
     bg_pileups = get_pileup(bg_bam, selfrag, mutpos)
-    return bg_ratio if bg_pileups.empty?
+    return [bg_ratio, ''] if bg_pileups.empty?
     if is_var?(bg_pileups[0])
       bg_ratio = Pileup.get_nonref_ratio(bg_pileups[0])
     end
-    bg_ratio
+    [bg_ratio, bg_pileups[0]]
   end
 
   def self.pick_frag_vars(mutbam,infasta,keyfrags,input_frags, var_pos, opts = {})
@@ -50,13 +50,13 @@ class BamCompare
         if is_var?(pileup)
           ratio = Pileup.get_nonref_ratio(pileup)
           if bgbam != ''
-            bg_ratio = get_bg_ratio(bg_bam, selfrag, mutpos)
+            bg_ratio, bg_pileup = get_bg_ratio(bg_bam, selfrag, mutpos)
             if bg_ratio == ''
               sortfrags[ratio][selfrag][mutpos] = pileup
             elsif bg_ratio <= 0.35
               sortfrags[ratio][selfrag][mutpos] = pileup
             else
-              warn "#{selfrag}\t#{mutpos}\t#{ratio}\t#{bg_ratio}\n"
+              warn "#{selfrag}\t#{mutpos}\t#{ratio}\t#{bg_ratio}\t#{pileup}\t#{bg_pileup}"
               var_pos[:hom][selfrag].delete(mutpos)
               next
             end
@@ -91,11 +91,11 @@ class BamCompare
     if pileuparray[0].to_s =~ /^\t0/ and pos_diff <= 10 and pos1 > 1
       pos1 = pos1 - 1
       pileuparray = get_pileup(bamobject, id, pos1)
-      # if the difference is larger than 10 bp then set up pileup information as null
+    # if the difference is larger than 10 bp then set up pileup information as null
     elsif pileuparray[0].to_s =~ /^\t0/ and pos_diff > 10
       pileuparray = []
-      # might be best to increase the number to 25 instead of 1
-      # to reduce possible errors in variant calls at ends of sequences
+    # might be best to increase the number to 25 instead of 1
+    # to reduce possible errors in variant calls at ends of sequences
     elsif pos1 == 1
       pileuparray = []
     end
@@ -180,10 +180,9 @@ class PileupCompare
   # each var is checked from pileup information
   # added to a hash to return
   def self.vars_in_pileup(pileupfile, opts = {})
-    ten_percent = %x[wc -l #{pileupfile}].to_i/10
-    linenum = 0
-    step = 1
-    pbar = ProgressBar.new('pileupfile', 100)
+    # totallines = %x[wc -l #{pileupfile}].to_i
+    # onepercent = totallines/100
+    # pbar = ProgressBar.new("pileupfile", 100)
     @defaults.merge!(opts)
 
     # hash of frag ids with respective variant positions and their base hash info
@@ -191,6 +190,8 @@ class PileupCompare
     vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
 
     # read mpileup file and process each variant
+    # linenum = 0
+    # step = 1
     File.foreach(pileupfile) do |line|
       pileup = Bio::DB::Pileup.new(line)
       if is_var?(pileup)
@@ -198,37 +199,52 @@ class PileupCompare
         vars_hash[pileup.ref_name][pileup.pos] = basehash
         # puts "#{pileup.ref_name}\t#{pileup.pos}\t#{pileup.consensus}\t#{basehash}\n"
       end
-      linenum += 1
-      if linenum == step * ten_percent
-        pbar.set(step * ten_percent)
-        step += 1
-      end
+      # linenum += 1
+      # if linenum == step * onepercent
+      #   pbar.set(step)
+      #   step += 1
+      # end
     end
-    pbar.finish
+    # pbar.finish
     vars_hash
   end
 
   def self.filter_vars(mut_pileup, bg_bulk_pileup_hash, opts = {})
-    ten_percent = %x[wc -l #{mut_pileup}].to_i/10
-    linenum = 0
-    step = 1
-    pbar = ProgressBar.new('pileupfile', 100)
+    # totallines = %x[wc -l #{mut_pileup}].to_i
+    # onepercent = totallines/100
+    # pbar = ProgressBar.new("mut_pileup", 100)
     @defaults.merge!(opts)
 
     vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
     # read mpileup file and process each variant
+    # linenum = 0
+    # step = 1
     File.foreach(mut_pileup) do |line|
       pileup = Bio::DB::Pileup.new(line)
       if is_var?(pileup)
         vars_hash = compare_bulk_pileups(pileup, bg_bulk_pileup_hash, vars_hash)
       end
-      linenum += 1
-      if linenum == step * ten_percent
-        pbar.set(step * ten_percent)
-        step += 1
+      # linenum += 1
+      # if linenum == step * onepercent
+      #   pbar.set(step)
+      #   step += 1
+      # end
+    end
+    # pbar.finish
+    vars_hash
+  end
+
+  def self.filter_vars_hash(mut_pileup, bg_bulk_pileup_hash, opts = {})
+    @defaults.merge!(opts)
+
+    vars_hash = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
+    # read mpileup file and process each variant
+    mut_pileup.each_key do |contig|
+      mut_pileup[contig].each_key do |pos|
+        pileup = mut_pileup[contig][pos]
+        vars_hash = compare_bulk_pileups(pileup, bg_bulk_pileup_hash, vars_hash)
       end
     end
-    pbar.finish
     vars_hash
   end
 
