@@ -378,6 +378,7 @@ class Pileup
         end
         bfr = Bfr.get_bfr(mut_bases, :bg_hash => bg_bases)
         out_hash[:hemi][frag][pos] = bfr
+        out_hash[:parbfr][frag][pos] = parent_hemi_hash[frag][pos]
       else
         out_hash = wrapper_to_push_base_hash(mut_bases, frag, pos, bg_pileup_hash, out_hash)
       end
