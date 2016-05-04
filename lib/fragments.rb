@@ -165,6 +165,7 @@ class Fragments
     # set minimum cut off ratio to pick fragments with variants
     # calculate min hme score for back or out crossed data
     # if no filtering applied set cutoff to 1
+    cutoff = 1.1
     if filter_out_low_hmes and polyploidy
         # cutoff = 1.1
         cutoff = bfr_ratio_cutoff(ratios_hash, bfr_cutoff)
@@ -174,8 +175,6 @@ class Fragments
       else
         cutoff = (2.0/adjust) + 1.0
       end
-    else
-      cutoff = 1.1
     end
 
     frags_to_keep = []

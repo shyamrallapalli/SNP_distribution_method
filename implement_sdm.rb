@@ -179,6 +179,9 @@ while repeat < 3 do
       unless selected_pos.include?(varpos)
         warn "Iteration:#{repeat}\tDeleting positions\t#{fragment}\t#{varpos}\n"
         var_pos[:hom][fragment].delete(varpos)
+        # reset repeat to zero if a variant position is deleted
+        # in second iteration, in order to do one more iteration
+        repeat = 0
       end
     end
   end
