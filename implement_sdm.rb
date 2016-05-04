@@ -187,8 +187,8 @@ end
 
 # ###[5] Outputs
 # Create FASTA file for the contig permutation obtained from SDM
-filename = "ordered_frags_thres#{threshold}.fasta"
-FileRW.write_order(sdm_frags, fasta_shuffle, filename)
+# filename = "ordered_frags_thres#{threshold}.fasta"
+# FileRW.write_order(sdm_frags, fasta_shuffle, filename)
 
 region = average_contig * (sdm_frags.length)
 puts "The length of the group of contigs that have a high Hom/het ratio is #{region.to_i} bp"
