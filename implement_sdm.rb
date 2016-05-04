@@ -158,21 +158,17 @@ while repeat < 3 do
 
   new_mut_frags = []
   mut_frags_pos = Hash.new{ |h,k| h[k] = Hash.new(&h.default_proc) }
-  File.open("#{output_folder}/#{repeat}_mutation.txt", 'w+') do |f|
-    f.puts "HMEscore\tAlleleFreq\tseq_id\tposition\tref_base\tcoverage\tbases\tbase_quals"
-    sortfrags.keys.sort.reverse.each do | ratio_1 |
-      if ratio_1 >= 0.75
-        sortfrags[ratio_1].each_key do | frag_1 |
-          new_mut_frags << frag_1
-          sortfrags[ratio_1][frag_1].each_key do | pos_1 |
-            mut_frags_pos[frag_1][pos_1] = 1
-            pileup = sortfrags[ratio_1][frag_1][pos_1].to_s
-            f.puts "#{input_frags[frag_1][:ratio]}\t#{ratio_1}\t#{pileup}"
-          end
+  sortfrags.keys.sort.reverse.each do | ratio_1 |
+    if ratio_1 >= 0.75
+      sortfrags[ratio_1].each_key do | frag_1 |
+        new_mut_frags << frag_1
+        sortfrags[ratio_1][frag_1].each_key do | pos_1 |
+          mut_frags_pos[frag_1][pos_1] = 1
         end
       end
     end
   end
+
   new_mut_frags.uniq!
   FileRW.write_txt("#{log_folder}/#{repeat}_6_7_final_selected_frags", new_mut_frags)
 
@@ -181,7 +177,7 @@ while repeat < 3 do
     selected_pos = mut_frags_pos[fragment].keys
     var_pos[:hom][fragment].each_key do | varpos |
       unless selected_pos.include?(varpos)
-        warn "Deleting positions\t#{fragment}\t#{varpos}\n"
+        warn "Iteration:#{repeat}\tDeleting positions\t#{fragment}\t#{varpos}\n"
         var_pos[:hom][fragment].delete(varpos)
       end
     end
